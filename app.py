@@ -75,7 +75,7 @@ def main():
     st.caption('Earth Work & Concrete Work Analysis System')
 
     # Load Data
-    earthwork_items = parse_excel_rates('1_Earth Work.xls')
+    earthwork_items = parse_excel_rates('1 Earth Work.xls')
     concrete_items = parse_excel_rates('2_Concrete(Hand mixed).xls')
 
     # Sidebar: Master Rates Input
