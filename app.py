@@ -68,9 +68,11 @@ def main():
     # Load Data
     earthwork_path = os.path.join(BASE_DIR, '1 Earth Work.xls')
     concrete_path = os.path.join(BASE_DIR, '2 Concrete ( Hand mixed ).xls')
+    iron_path = os.path.join(BASE_DIR, '3 Iron and Steel work.xls')
 
     earthwork_items = parse_excel_rates(earthwork_path)
     concrete_items = parse_excel_rates(concrete_path)
+    iron_items = parse_excel_rates(iron_path)
 
     # Master Rates Sidebar
     st.sidebar.header('⚙️ Master Unit Rates (MMK)')
@@ -79,6 +81,8 @@ def main():
     rate_mason = st.sidebar.number_input('Mason', value=25000.0)
     rate_carpenter = st.sidebar.number_input('Carpenter', value=25000.0)
     rate_maistry = st.sidebar.number_input('Maistry', value=30000.0)
+    rate_blacksmith = st.sidebar.number_input('Blacksmith / Steel Worker', value=28000.0)
+    rate_welder = st.sidebar.number_input('Welder', value=30000.0)
 
     rate_cement = st.sidebar.number_input('Cement', value=12000.0)
     rate_sand = st.sidebar.number_input('Sand', value=45000.0)
@@ -91,6 +95,11 @@ def main():
     rate_timber_planks = st.sidebar.number_input('Timber planks', value=1200.0)
     rate_nails = st.sidebar.number_input('Nails and spikes', value=4500.0)
 
+    # Steel / Iron Material Rates
+    rate_steel_bar = st.sidebar.number_input('M.S. Bar / Reinforcement (Ton)', value=2800000.0)
+    rate_binding_wire = st.sidebar.number_input('Binding Wire (Viss/Ib)', value=6500.0)
+    rate_structural_steel = st.sidebar.number_input('Structural Steel (Ton)', value=3000000.0)
+
     rate_map = {
         'Worker': rate_worker,
         'Worker for carrying and ramming': rate_worker,
@@ -100,6 +109,9 @@ def main():
         'Mason': rate_mason,
         'Carpenter': rate_carpenter,
         'Maistry': rate_maistry,
+        'Blacksmith': rate_blacksmith,
+        'Steel worker': rate_blacksmith,
+        'Welder': rate_welder,
         'Cement': rate_cement,
         'Sand': rate_sand,
         'River Shingle (1-1/2" gauge)': rate_shingle,
@@ -113,15 +125,20 @@ def main():
         'Timber scantling': rate_timber_scantling,
         'Tinber planks 1"': rate_timber_planks,
         'Nails and spikes': rate_nails,
+        'M.S. Bar': rate_steel_bar,
+        'Reinforcement Steel': rate_steel_bar,
+        'Binding Wire': rate_binding_wire,
+        'Structural Steel': rate_structural_steel,
     }
 
     # ==========================================
     # 1. လုပ်ငန်းအမျိုးအစား Checkbox များ
     # ==========================================
     st.subheader('📋 ၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးချယ်ပါ')
-    col_e, col_c = st.columns(2)
+    col_e, col_c, col_i = st.columns(3)
     show_earthwork = col_e.checkbox('🚜 Earth Work', value=True)
     show_concrete = col_c.checkbox('🧱 Concrete Work', value=True)
+    show_iron = col_i.checkbox('⚙️ Iron & Steel Work', value=True)
 
     selected_items_list = []
 
@@ -136,6 +153,12 @@ def main():
         cc_selected = st.multiselect('🧱 Concrete Work မှ တွက်မည်များ ရွေးရန်:', list(cc_options.keys()))
         for key in cc_selected:
             selected_items_list.append(cc_options[key])
+
+    if show_iron and iron_items:
+        ir_options = {f"[Iron] Item {i['item_no']} - {i['title']}": i for i in iron_items}
+        ir_selected = st.multiselect('⚙️ Iron & Steel Work မှ တွက်မည်များ ရွေးရန်:', list(ir_options.keys()))
+        for key in ir_selected:
+            selected_items_list.append(ir_options[key])
 
     if not selected_items_list:
         st.info('👉 တွက်ချက်လိုသော Item များကို အထက်တွင် ရွေးချယ်ပေးပါ။')
@@ -160,7 +183,6 @@ def main():
                 key=f'part_{idx}_{item["item_no"]}'
             )
 
-            # Input columns: No, L, B, H, Deduction
             c_no, c_l, c_b, c_h, c_ded = st.columns(5)
 
             no_val = c_no.number_input('No', min_value=1, value=1, key=f'no_{idx}_{item["item_no"]}')
@@ -169,11 +191,10 @@ def main():
             h_val = c_h.number_input('H (ft)', min_value=0.0, value=5.0, key=f'h_{idx}_{item["item_no"]}')
             ded_val = c_ded.number_input('Deduction', min_value=0.0, value=0.0, key=f'ded_{idx}_{item["item_no"]}')
 
-            # Calculation based on Unit
+            # Calculation Logic
             if 'rft' in unit_str:
                 gross_qty = no_val * l_val
             elif 'sft' in unit_str:
-                # Sft Logic: non-zero dimension များထဲမှ နှစ်ခုကို မြှောက်ခြင်း
                 if l_val > 0 and b_val > 0:
                     gross_qty = no_val * l_val * b_val
                 elif l_val > 0 and h_val > 0:
@@ -182,14 +203,16 @@ def main():
                     gross_qty = no_val * b_val * h_val
                 else:
                     gross_qty = 0.0
+            elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
+                # Steel/Iron Weight based items (If L is used as Weight or Quantity)
+                gross_qty = no_val * l_val
             else:
-                # Default for Cft / % Cft
+                # Cft and default
                 gross_qty = no_val * l_val * b_val * h_val
 
             sub_total = max(0.0, gross_qty - ded_val)
             item_quantities[item['item_no']] = sub_total
 
-            # Table 형태로 Measurement အနှစ်ချုပ် ပြသပေးခြင်း
             meas_df = pd.DataFrame([{
                 'Particular': particular_desc,
                 'No': no_val,
