@@ -60,7 +60,7 @@ def parse_excel_rates(file_path):
 
 def main():
     st.set_page_config(
-        page_title='QS & Rate Analysis System', layout='wide', page_icon='🏗️'
+        page_title='QS Multi-Item Estimation System', layout='wide', page_icon='🏗️'
     )
 
     st.title('🏗️ Estimation, QS & Rate Analysis System')
@@ -74,12 +74,14 @@ def main():
 
     # Master Rates Sidebar
     st.sidebar.header('⚙️ Master Unit Rates (MMK)')
+    st.sidebar.subheader('👷 Labor Rates')
     rate_worker = st.sidebar.number_input('Worker', value=15000.0)
     rate_digger = st.sidebar.number_input('Digger', value=18000.0)
     rate_mason = st.sidebar.number_input('Mason', value=25000.0)
     rate_carpenter = st.sidebar.number_input('Carpenter', value=25000.0)
     rate_maistry = st.sidebar.number_input('Maistry', value=30000.0)
 
+    st.sidebar.subheader('🧱 Material Rates')
     rate_cement = st.sidebar.number_input('Cement', value=12000.0)
     rate_sand = st.sidebar.number_input('Sand', value=45000.0)
     rate_shingle = st.sidebar.number_input('River Shingle', value=85000.0)
@@ -115,101 +117,145 @@ def main():
         'Nails and spikes': rate_nails,
     }
 
-    # Main Category Selection
-    category = st.radio('လုပ်ငန်းအမျိုးအစား ရွေးပါ:', ['Earth Work', 'Concrete Work'], horizontal=True)
-    items_data = earthwork_items if category == 'Earth Work' else concrete_items
+    # All Available Items Combination
+    all_items = {}
+    for item in earthwork_items:
+        key = f"[Earth Work] Item {item['item_no']} - {item['title']}"
+        all_items[key] = item
+    for item in concrete_items:
+        key = f"[Concrete Work] Item {item['item_no']} - {item['title']}"
+        all_items[key] = item
 
-    if not items_data:
-        st.warning(f'{category} အတွက် Excel ဒေတာ ဖတ်၍မရပါ သို့မဟုတ် ဖိုင်လမ်းကြောင်း မမှန်ပါ။')
-        return
-
-    st.subheader(f'📋 {category} - All Items Batch Estimation')
-    st.write('အောက်ပါ ဇယားတွင် Item အသီးသီးအတွက် တိုင်းတာရရှိသော Dimensions များကို ရိုက်ထည့်ပါ -')
-
-    # Data Editor အတွက် DataFrame ပြင်ဆင်ခြင်း
-    init_rows = []
-    for item in items_data:
-        init_rows.append({
-            'Item No': item['item_no'],
-            'Description': item['title'],
-            'Unit': item['unit'],
-            'Nos': 1.0,
-            'Length (ft)': 10.0,
-            'Width (ft)': 10.0,
-            'Depth/Height (ft/in)': 1.0 if item['unit'] != 'sft.' else 0.0,
-        })
-
-    df_input = pd.DataFrame(init_rows)
-
-    # Editable Data Table
-    edited_df = st.data_editor(
-        df_input,
-        column_config={
-            'Item No': st.column_config.TextColumn(disabled=True),
-            'Description': st.column_config.TextColumn(disabled=True),
-            'Unit': st.column_config.TextColumn(disabled=True),
-            'Nos': st.column_config.NumberColumn(min_value=0.0, default=1.0),
-            'Length (ft)': st.column_config.NumberColumn(min_value=0.0, default=0.0),
-            'Width (ft)': st.column_config.NumberColumn(min_value=0.0, default=0.0),
-            'Depth/Height (ft/in)': st.column_config.NumberColumn(min_value=0.0, default=0.0),
-        },
-        use_container_width=True,
-        hide_index=True,
-        key=f'editor_{category}'
+    st.subheader('📋 ၁။ တွက်ချက်လိုသော Work Items များအားလုံးကို ရွေးချယ်ပါ')
+    selected_keys = st.multiselect(
+        'Earthwork နှင့် Concrete Work နှစ်သက်ရာ Items အများအပြားကို ရွေးပါ:',
+        options=list(all_items.keys()),
+        default=list(all_items.keys())[:2] if all_items else []
     )
 
-    if st.button('🚀 အားလုံး အစဉ်လိုက် တွက်ချက်မည်', type='primary'):
-        results = []
-        grand_total = 0.0
+    if not selected_keys:
+        st.info('တွက်ချက်ရန် Item အနည်းဆုံး တစ်ခု ရွေးချယ်ပါ။')
+        return
 
-        for idx, row in edited_df.iterrows():
-            item_ref = items_data[idx]
-            u_str = row['Unit']
-            nos = row['Nos']
-            l = row['Length (ft)']
-            w = row['Width (ft)']
-            d = row['Depth/Height (ft/in)']
+    # Tabs for Measurement & Estimate
+    tab_measurement, tab_estimate = st.tabs([
+        '📐 1. Detail Measurement ( take-off )',
+        '📊 2. Rate Analysis & Summary Estimate',
+    ])
 
-            # Calculated Quantity
-            if u_str == 'sft.':
-                calc_qty = l * w * nos
-            else:
-                calc_qty = l * w * d * nos
+    # ---------------------------------------------------------
+    # TAB 1: Detail Measurement (Multi-Item Table)
+    # ---------------------------------------------------------
+    with tab_measurement:
+        st.subheader('📐 Measurements ရိုက်ထည့်ရန် ဇယား')
+        st.caption('ဇယားထဲတွင် Length, Width, Depth/Thickness, Nos များကို စိတ်ကြိုက် ပြင်ဆင်နိုင်ပါသည်။')
 
-            # Rate Analysis Calculation
-            item_cost = 0.0
-            if item_ref['breakdown'] and calc_qty > 0:
-                try:
-                    std_base = float(item_ref['std_qty'])
-                except (ValueError, TypeError):
-                    std_base = 100.0
-
-                for b in item_ref['breakdown']:
-                    p = b['particular']
-                    q = b['qty']
-                    req_q = (q / std_base) * calc_qty
-                    r = rate_map.get(p, 0.0)
-                    item_cost += req_q * r
-
-            unit_rate = item_cost / calc_qty if calc_qty > 0 else 0.0
-            grand_total += item_cost
-
-            results.append({
-                'Item No': row['Item No'],
-                'Description': row['Description'],
-                'Total Qty': round(calc_qty, 2),
-                'Unit': u_str,
-                'Unit Rate (MMK)': round(unit_rate, 2),
-                'Total Cost (MMK)': round(item_cost, 2)
+        # Construct Measurement Data Table
+        meas_rows = []
+        for key in selected_keys:
+            item = all_items[key]
+            meas_rows.append({
+                'Item Name': key,
+                'Unit': item['unit'],
+                'Length (ft)': 10.0,
+                'Width (ft)': 10.0,
+                'Depth/Thk (ft/in)': 0.0 if item['unit'] == 'sft.' else 5.0,
+                'Nos': 1,
             })
 
-        st.divider()
-        st.subheader('📊 ရရှိလာသော အစဉ်လိုက် တွက်ချက်မှု ရလဒ်များ (BoQ Summary)')
-        
-        df_results = pd.DataFrame(results)
-        st.dataframe(df_results, use_container_width=True, hide_index=True)
+        df_meas_input = pd.DataFrame(meas_rows)
 
-        st.success(f'💰 **စုစုပေါင်း ခန့်မှန်းခြေ ကုန်ကျစရိတ် (Grand Total): {grand_total:,.2f} MMK**')
+        # Interactive Table
+        edited_df = st.data_editor(
+            df_meas_input,
+            num_rows='fixed',
+            use_container_width=True,
+            key='measurement_editor'
+        )
+
+        # Quantity Calculation
+        calculated_quantities = {}
+        for idx, row in edited_df.iterrows():
+            item_key = row['Item Name']
+            u = row['Unit']
+            l = float(row['Length (ft)'])
+            w = float(row['Width (ft)'])
+            d = float(row['Depth/Thk (ft/in)'])
+            n = int(row['Nos'])
+
+            if u == 'sft.':
+                total_q = l * w * n
+            else:
+                total_q = l * w * d * n
+
+            calculated_quantities[item_key] = total_q
+
+        st.session_state.calculated_quantities = calculated_quantities
+
+    # ---------------------------------------------------------
+    # TAB 2: Cost Analysis & Summary
+    # ---------------------------------------------------------
+    with tab_estimate:
+        st.subheader('📊 စုစုပေါင်း ကုန်ကျစရိတ်နှင့် Detailed Analysis')
+
+        total_grand_cost = 0.0
+        summary_list = []
+        breakdown_all_list = []
+
+        for key in selected_keys:
+            item = all_items[key]
+            qty_to_use = st.session_state.calculated_quantities.get(key, 0.0)
+
+            try:
+                std_base_qty = float(item['std_qty'])
+            except (ValueError, TypeError):
+                std_base_qty = 100.0
+
+            item_total_cost = 0.0
+
+            for row in item['breakdown']:
+                part = row['particular']
+                std_qty = row['qty']
+                u = row['unit']
+
+                req_qty = (std_qty / std_base_qty) * qty_to_use if std_base_qty > 0 else 0.0
+                unit_rate = rate_map.get(part, 0.0)
+                amount = req_qty * unit_rate
+                item_total_cost += amount
+
+                breakdown_all_list.append({
+                    'Item Category': key,
+                    'Particular': part,
+                    'Unit': u,
+                    'Required Qty': round(req_qty, 3),
+                    'Rate (MMK)': unit_rate,
+                    'Amount (MMK)': round(amount, 2)
+                })
+
+            unit_rate_final = item_total_cost / qty_to_use if qty_to_use > 0 else 0.0
+            total_grand_cost += item_total_cost
+
+            summary_list.append({
+                'Item Description': key,
+                'Quantity': round(qty_to_use, 2),
+                'Unit': item['unit'],
+                'Unit Rate (MMK)': round(unit_rate_final, 2),
+                'Total Amount (MMK)': round(item_total_cost, 2)
+            })
+
+        # Display Summary Table
+        st.markdown('### 📌 BOQ Summary Table')
+        df_summary = pd.DataFrame(summary_list)
+        st.dataframe(df_summary, use_container_width=True)
+
+        st.metric('💰 စုစုပေါင်း ကုန်ကျစရိတ် (Grand Total Amount)', f'{total_grand_cost:,.2f} MMK')
+
+        st.divider()
+
+        # Detailed Material/Labor Breakdown Expansion
+        st.markdown('### 🔍 Detailed Material & Labor Breakdown (အသေးစိတ် ပစ္စည်း/လုပ်အားခ)')
+        df_breakdown = pd.DataFrame(breakdown_all_list)
+        st.dataframe(df_breakdown, use_container_width=True)
 
 
 if __name__ == '__main__':
