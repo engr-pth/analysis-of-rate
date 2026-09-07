@@ -4,13 +4,12 @@ import streamlit as st
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Labour အမျိုးအစားများကို ခွဲခြားရန် List
+# Labour/Worker Keywords List
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
-    "machine driver", "smith", "charges"
+    "smith", "machine driver", "charges", "labour"
 ]
-
 
 @st.cache_data
 def parse_excel_rates(file_path):
@@ -313,13 +312,11 @@ def main():
     # ==========================================
     # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate
     # ==========================================
-    st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Breakdown")
+    st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Estimate")
 
-    # Global Quantity Aggregation (Material vs Labour)
+    grand_total = 0.0
     material_summary = {}
     labour_summary = {}
-
-    summary_rows = []
 
     for idx, item in enumerate(selected_items_list):
         item_no = item['item_no']
@@ -334,8 +331,6 @@ def main():
                 std_base_qty = 100.0
 
             calc_rows = []
-            item_total_cost = 0.0
-
             for row in item['breakdown']:
                 part = row['particular']
                 std_qty = row['qty']
@@ -344,22 +339,6 @@ def main():
                 req_qty = (std_qty / std_base_qty) * measured_qty
                 unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
-                item_total_cost += amount
-
-                # Global Material / Labour Aggregation
-                part_lower = part.lower()
-                is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
-
-                target_dict = labour_summary if is_labour else material_summary
-                if part not in target_dict:
-                    target_dict[part] = {
-                        "unit": u,
-                        "total_qty": 0.0,
-                        "rate": unit_rate,
-                        "amount": 0.0
-                    }
-                target_dict[part]["total_qty"] += req_qty
-                target_dict[part]["amount"] += amount
 
                 calc_rows.append({
                     "Particular": part,
@@ -369,89 +348,85 @@ def main():
                     "Amount (MMK)": round(amount, 2),
                 })
 
+                # Material vs Labour Aggregate Categorization
+                part_lower = part.lower()
+                is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
+
+                target_dict = labour_summary if is_labour else material_summary
+
+                if part not in target_dict:
+                    target_dict[part] = {
+                        "unit": u,
+                        "qty": req_qty,
+                        "rate": unit_rate,
+                        "amount": amount
+                    }
+                else:
+                    target_dict[part]["qty"] += req_qty
+                    target_dict[part]["amount"] += amount
+
             df_item = pd.DataFrame(calc_rows)
             st.dataframe(df_item, use_container_width=True)
 
-            summary_rows.append({
-                "Item No": item_no,
-                "Title": item['title'],
-                "Total Qty": f"{measured_qty:,.2f} {item['unit']}",
-                "Total Amount (MMK)": f"{item_total_cost:,.2f}",
-            })
+            item_total = df_item["Amount (MMK)"].sum()
+            grand_total += item_total
         else:
             st.warning("Breakdown ဒေတာ မရှိပါ။")
 
     st.divider()
 
     # ==========================================
-    # 4. Bill Of Quantity (Detailed BOQ Sheet)
+    # 4. Detailed Bill of Quantity (BOQ Breakdown)
     # ==========================================
-    st.subheader("📜 ၄။ Bill Of Quantity (BOQ Sheet)")
-
-    boq_rows = []
-    total_material_cost = 0.0
-    total_labour_cost = 0.0
+    st.subheader("📜 ၄။ Detailed Bill Of Quantity (BOQ Summary)")
 
     # Material Section
-    boq_rows.append({"No.": "", "Particular": "--- MATERIAL ---", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
-    mat_idx = 1
-    for part_name, data in material_summary.items():
-        boq_rows.append({
-            "No.": mat_idx,
-            "Particular": part_name,
+    st.markdown("### 📦 Material Cost Breakdown")
+    mat_rows = []
+    total_mat_cost = 0.0
+    for idx, (p_name, data) in enumerate(material_summary.items(), start=1):
+        mat_rows.append({
+            "No.": idx,
+            "Particular": p_name,
             "Unit": data["unit"],
-            "Quantity": f"{data['total_qty']:,.2f}",
-            "Rate": f"{data['rate']:,.2f}",
-            "Amount": f"{data['amount']:,.2f}"
+            "Quantity": f"{data['qty']:,.2f}",
+            "Rate (MMK)": f"{data['rate']:,.2f}",
+            "Amount (MMK)": f"{data['amount']:,.2f}"
         })
-        total_material_cost += data["amount"]
-        mat_idx += 1
+        total_mat_cost += data["amount"]
 
-    boq_rows.append({
-        "No.": "",
-        "Particular": "TOTAL MATERIAL COST",
-        "Unit": "",
-        "Quantity": "",
-        "Rate": "",
-        "Amount": f"{total_material_cost:,.2f}"
-    })
+    if mat_rows:
+        st.table(pd.DataFrame(mat_rows))
+    st.markdown(f"**Total Material Cost = `{total_mat_cost:,.2f} MMK`**")
+
+    st.divider()
 
     # Labour Section
-    boq_rows.append({"No.": "", "Particular": "", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
-    boq_rows.append({"No.": "", "Particular": "--- LABOUR ---", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
-    lab_idx = 1
-    for part_name, data in labour_summary.items():
-        boq_rows.append({
-            "No.": lab_idx,
-            "Particular": part_name,
+    st.markdown("### 👷 Labour Cost Breakdown")
+    lab_rows = []
+    total_lab_cost = 0.0
+    for idx, (p_name, data) in enumerate(labour_summary.items(), start=1):
+        lab_rows.append({
+            "No.": idx,
+            "Particular": p_name,
             "Unit": data["unit"],
-            "Quantity": f"{data['total_qty']:,.2f}",
-            "Rate": f"{data['rate']:,.2f}",
-            "Amount": f"{data['amount']:,.2f}"
+            "Quantity": f"{data['qty']:,.2f}",
+            "Rate (MMK)": f"{data['rate']:,.2f}",
+            "Amount (MMK)": f"{data['amount']:,.2f}"
         })
-        total_labour_cost += data["amount"]
-        lab_idx += 1
+        total_lab_cost += data["amount"]
 
-    boq_rows.append({
-        "No.": "",
-        "Particular": "TOTAL LABOUR COST",
-        "Unit": "",
-        "Quantity": "",
-        "Rate": "",
-        "Amount": f"{total_labour_cost:,.2f}"
-    })
+    if lab_rows:
+        st.table(pd.DataFrame(lab_rows))
+    st.markdown(f"**Total Labour Cost = `{total_lab_cost:,.2f} MMK`**")
 
-    # Display BOQ Dataframe
-    df_boq = pd.DataFrame(boq_rows)
-    st.dataframe(df_boq, use_container_width=True)
+    st.divider()
 
-    # Grand Cost Summary Cards
-    grand_total_cost = total_material_cost + total_labour_cost
-
-    m_col1, m_col2, m_col3 = st.columns(3)
-    m_col1.metric(label="📦 Total Material Cost", value=f"{total_material_cost:,.2f} MMK")
-    m_col2.metric(label="👷 Total Labour Cost", value=f"{total_labour_cost:,.2f} MMK")
-    m_col3.metric(label="💰 Grand Total Cost", value=f"{grand_total_cost:,.2f} MMK")
+    # Grand Totals Summary Box
+    col_m1, col_m2, col_m3 = st.columns(3)
+    col_m1.metric("📦 Total Material Cost", f"{total_mat_cost:,.2f} MMK")
+    col_m2.metric("👷 Total Labour Cost", f"{total_lab_cost:,.2f} MMK")
+    col_m3.metric("💰 Grand Total Cost", f"{grand_total:,.2f} MMK")
 
 
 if __name__ == "__main__":
