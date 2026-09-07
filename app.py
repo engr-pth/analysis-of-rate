@@ -5,6 +5,7 @@ import streamlit as st
 # ==========================================
 # 1. Helper Function: Excel Data Parsing
 # ==========================================
+@st.cache_data
 def parse_earthwork_excel(file_path):
     df_raw = pd.read_excel(file_path)
 
@@ -17,8 +18,17 @@ def parse_earthwork_excel(file_path):
         unit = str(row.iloc[2]).strip()
         qty = row.iloc[3]
 
-        # Item ခေါင်းစဉ်အသစ် တွေ့ပါက
-        if item_no not in ['nan', 'No.', 'NaN'] and particular != 'nan':
+        # ၁။ Header row များနှင့် 'Quantity' စာသားပါသော ခေါင်းစဉ်တန်းများကို ကျော်ပါ
+        if (
+            item_no in ['nan', 'No.', 'NaN']
+            and particular in ['nan', 'Particular', 'NaN']
+        ):
+            continue
+        if str(qty).strip().lower() == 'quantity':
+            continue
+
+        # ၂။ Item ခေါင်းစဉ်အသစ် တွေ့ရှိပါက (Item No. ရှိသော စာကြောင်းများ)
+        if item_no not in ['nan', 'NaN'] and particular not in ['nan', 'NaN']:
             if current_item:
                 items.append(current_item)
             current_item = {
@@ -28,12 +38,18 @@ def parse_earthwork_excel(file_path):
                 'qty': qty,
                 'breakdown': [],
             }
-        # Item အောက်က Breakdown (လုပ်အား/ပစ္စည်း) များ
-        elif current_item and particular != 'nan':
+        # ၃။ Item အောက်ရှိ Breakdown (လုပ်အားခ/ပစ္စည်း) စာကြောင်းများ
+        elif current_item and particular not in ['nan', 'NaN']:
+            # စာသားများပါဝင်နေပါက float သို့ ပြောင်းစဉ် အမှားမတက်စေရန် Safe Conversion ပြုလုပ်ခြင်း
+            try:
+                qty_val = float(qty)
+            except (ValueError, TypeError):
+                qty_val = 0.0
+
             current_item['breakdown'].append({
                 'particular': particular,
                 'unit': unit,
-                'qty': float(qty) if pd.notnull(qty) else 0.0,
+                'qty': qty_val,
             })
 
     if current_item:
