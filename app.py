@@ -4,6 +4,13 @@ import streamlit as st
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Labour အမျိုးအစားများကို ခွဲခြားရန် List
+LABOUR_KEYWORDS = [
+    "worker", "digger", "mason", "carpenter", "maistry", 
+    "blacksmith", "steel worker", "welder", "surveyor", 
+    "machine driver", "smith", "charges"
+]
+
 
 @st.cache_data
 def parse_excel_rates(file_path):
@@ -108,7 +115,6 @@ def main():
         calc_expr = st.text_input("Expression ရိုက်ပါ (e.g. 10*12.5 + 5):", value="")
         if calc_expr:
             try:
-                # Basic Safe Math Evaluation
                 allowed_chars = "0123456789+-*/(). "
                 if all(char in allowed_chars for char in calc_expr):
                     res = eval(calc_expr)
@@ -146,7 +152,6 @@ def main():
             ])
             length_ft = st.number_input("Total Length (ft):", min_value=0.0, value=100.0)
 
-            # Weight per ft calculation (D^2 / 529 for lb/ft or mm^2 / 533 for kg/ft)
             dia_mm_map = {
                 "10 mm (3/8\")": 10,
                 "12 mm (1/2\")": 12,
@@ -155,7 +160,7 @@ def main():
                 "25 mm (1\")": 25
             }
             d_mm = dia_mm_map[bar_dia]
-            wt_kg_per_ft = (d_mm * d_mm) / 533.0  # Approx weight kg/ft
+            wt_kg_per_ft = (d_mm * d_mm) / 533.0
             total_kg = length_ft * wt_kg_per_ft
             total_ton = total_kg / 1000.0
 
@@ -260,7 +265,6 @@ def main():
                 h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
                 ded_val = c_ded.number_input("Deduction", min_value=0.0, value=0.0, key=f"ded_{idx}_{r_idx}_{item['item_no']}")
 
-                # Unit Calculation Logic
                 if 'rft' in unit_str:
                     gross_qty = no_val * l_val
                 elif 'sft' in unit_str:
@@ -309,9 +313,12 @@ def main():
     # ==========================================
     # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate
     # ==========================================
-    st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Estimate")
+    st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Breakdown")
 
-    grand_total = 0.0
+    # Global Quantity Aggregation (Material vs Labour)
+    material_summary = {}
+    labour_summary = {}
+
     summary_rows = []
 
     for idx, item in enumerate(selected_items_list):
@@ -327,6 +334,8 @@ def main():
                 std_base_qty = 100.0
 
             calc_rows = []
+            item_total_cost = 0.0
+
             for row in item['breakdown']:
                 part = row['particular']
                 std_qty = row['qty']
@@ -335,6 +344,22 @@ def main():
                 req_qty = (std_qty / std_base_qty) * measured_qty
                 unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
+                item_total_cost += amount
+
+                # Global Material / Labour Aggregation
+                part_lower = part.lower()
+                is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
+
+                target_dict = labour_summary if is_labour else material_summary
+                if part not in target_dict:
+                    target_dict[part] = {
+                        "unit": u,
+                        "total_qty": 0.0,
+                        "rate": unit_rate,
+                        "amount": 0.0
+                    }
+                target_dict[part]["total_qty"] += req_qty
+                target_dict[part]["amount"] += amount
 
                 calc_rows.append({
                     "Particular": part,
@@ -347,25 +372,86 @@ def main():
             df_item = pd.DataFrame(calc_rows)
             st.dataframe(df_item, use_container_width=True)
 
-            item_total = df_item["Amount (MMK)"].sum()
-            grand_total += item_total
-
             summary_rows.append({
                 "Item No": item_no,
                 "Title": item['title'],
                 "Total Qty": f"{measured_qty:,.2f} {item['unit']}",
-                "Total Amount (MMK)": f"{item_total:,.2f}",
+                "Total Amount (MMK)": f"{item_total_cost:,.2f}",
             })
         else:
             st.warning("Breakdown ဒေတာ မရှိပါ။")
 
     st.divider()
 
-    # Summary Table
-    st.subheader("📜 ရွေးချယ်ခဲ့သော လုပ်ငန်းများ၏ စုစုပေါင်း အနှစ်ချုပ် (BOQ Summary)")
-    st.table(pd.DataFrame(summary_rows))
+    # ==========================================
+    # 4. Bill Of Quantity (Detailed BOQ Sheet)
+    # ==========================================
+    st.subheader("📜 ၄။ Bill Of Quantity (BOQ Sheet)")
 
-    st.metric(label="💰 စုစုပေါင်း ကုန်ကျစရိတ် (Grand Total Estimate)", value=f"{grand_total:,.2f} MMK")
+    boq_rows = []
+    total_material_cost = 0.0
+    total_labour_cost = 0.0
+
+    # Material Section
+    boq_rows.append({"No.": "", "Particular": "--- MATERIAL ---", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
+    mat_idx = 1
+    for part_name, data in material_summary.items():
+        boq_rows.append({
+            "No.": mat_idx,
+            "Particular": part_name,
+            "Unit": data["unit"],
+            "Quantity": f"{data['total_qty']:,.2f}",
+            "Rate": f"{data['rate']:,.2f}",
+            "Amount": f"{data['amount']:,.2f}"
+        })
+        total_material_cost += data["amount"]
+        mat_idx += 1
+
+    boq_rows.append({
+        "No.": "",
+        "Particular": "TOTAL MATERIAL COST",
+        "Unit": "",
+        "Quantity": "",
+        "Rate": "",
+        "Amount": f"{total_material_cost:,.2f}"
+    })
+
+    # Labour Section
+    boq_rows.append({"No.": "", "Particular": "", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
+    boq_rows.append({"No.": "", "Particular": "--- LABOUR ---", "Unit": "", "Quantity": "", "Rate": "", "Amount": ""})
+    lab_idx = 1
+    for part_name, data in labour_summary.items():
+        boq_rows.append({
+            "No.": lab_idx,
+            "Particular": part_name,
+            "Unit": data["unit"],
+            "Quantity": f"{data['total_qty']:,.2f}",
+            "Rate": f"{data['rate']:,.2f}",
+            "Amount": f"{data['amount']:,.2f}"
+        })
+        total_labour_cost += data["amount"]
+        lab_idx += 1
+
+    boq_rows.append({
+        "No.": "",
+        "Particular": "TOTAL LABOUR COST",
+        "Unit": "",
+        "Quantity": "",
+        "Rate": "",
+        "Amount": f"{total_labour_cost:,.2f}"
+    })
+
+    # Display BOQ Dataframe
+    df_boq = pd.DataFrame(boq_rows)
+    st.dataframe(df_boq, use_container_width=True)
+
+    # Grand Cost Summary Cards
+    grand_total_cost = total_material_cost + total_labour_cost
+
+    m_col1, m_col2, m_col3 = st.columns(3)
+    m_col1.metric(label="📦 Total Material Cost", value=f"{total_material_cost:,.2f} MMK")
+    m_col2.metric(label="👷 Total Labour Cost", value=f"{total_labour_cost:,.2f} MMK")
+    m_col3.metric(label="💰 Grand Total Cost", value=f"{grand_total_cost:,.2f} MMK")
 
 
 if __name__ == "__main__":
