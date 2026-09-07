@@ -8,7 +8,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
-    "smith", "machine driver", "charges", "labour", "hoisting", "fixing"
+    "smith", "machine driver", "charges", "labour",
+    "hoisting and fixing", "carriage to site"
 ]
 
 @st.cache_data
@@ -61,34 +62,6 @@ def parse_excel_rates(file_path):
     return items
 
 
-def get_dynamic_rate(part_name, rate_map, default_structural_rate, default_labour_rate):
-    """
-    Particular နာမည်အတိုင်း rate_map ထဲတွင် မတွေ့ပါက Keyword များဖြင့် ရှာဖွေပြီး
-    သီးခြား Rate ချိတ်ဆက်ပေးသော Function
-    """
-    # ၁။ တိုက်ရိုက် ကိုက်ညီမှု ရှိမရှိ စစ်ဆေးခြင်း
-    if part_name in rate_map:
-        return rate_map[part_name]
-    
-    p_lower = part_name.lower().strip()
-
-    # 2. Key-based Flexible Matching Logic
-    if "r.s." in p_lower or "girder" in p_lower or "steel" in p_lower or "iron" in p_lower or "beam" in p_lower:
-        # 1 Ton = 20 Cwt ဖြစ်၍ Cwt ယူနစ်ဖြစ်ပါက Ton Rate ကို 20 ဖြင့် စားပေးခြင်း
-        return default_structural_rate / 20.0
-
-    elif "carriage" in p_lower or "transport" in p_lower or "carrying" in p_lower:
-        return 5000.0  # Carriage per unit default rate
-
-    elif "hoisting" in p_lower or "fixing" in p_lower or "installation" in p_lower:
-        return default_labour_rate
-
-    elif any(k in p_lower for k in ["worker", "labour", "digger"]):
-        return rate_map.get("Worker", 15000.0)
-
-    return 0.0
-
-
 def main():
     st.set_page_config(
         page_title="QS & Rate Analysis System", layout="wide", page_icon="🏗️"
@@ -113,6 +86,8 @@ def main():
 
     with tab_rates:
         st.header("Master Unit Rates (MMK)")
+        
+        st.subheader("👷 Labour Rates")
         rate_worker = st.number_input("Worker", value=15000.0)
         rate_digger = st.number_input("Digger", value=18000.0)
         rate_mason = st.number_input("Mason", value=25000.0)
@@ -121,6 +96,7 @@ def main():
         rate_blacksmith = st.number_input("Blacksmith / Steel Worker", value=28000.0)
         rate_welder = st.number_input("Welder", value=30000.0)
 
+        st.subheader("🧱 Concrete & Earth Materials")
         rate_cement = st.number_input("Cement", value=12000.0)
         rate_sand = st.number_input("Sand", value=45000.0)
         rate_shingle = st.number_input("River Shingle", value=85000.0)
@@ -132,9 +108,15 @@ def main():
         rate_timber_planks = st.number_input("Timber planks", value=1200.0)
         rate_nails = st.number_input("Nails and spikes", value=4500.0)
 
+        st.subheader("⚙️ Iron & Structural Rates")
         rate_steel_bar = st.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
         rate_binding_wire = st.number_input("Binding Wire (Viss/Ib)", value=6500.0)
         rate_structural_steel = st.number_input("Structural Steel (Ton)", value=3000000.0)
+        
+        # 📌 အသစ်ထည့်သွင်းလိုက်သော Rate များ (R.S. Girder & Services)
+        rate_rs_girder = st.number_input("R.S. girder (per cwt)", value=150000.0)
+        rate_carriage = st.number_input("Carriage to site (per cwt)", value=5000.0)
+        rate_hoisting = st.number_input("Hoisting and fixing (per cwt)", value=15000.0)
 
     # 🧮 Sidebar Quick Calculator
     with tab_calc:
@@ -194,6 +176,7 @@ def main():
             st.info(f"👉 **Weight = {total_kg:,.2f} Kg ({total_ton:.4f} Ton)**")
 
     rate_map = {
+        # Labour Rates
         "Worker": rate_worker,
         "Worker for carrying and ramming": rate_worker,
         "Worker for watering": rate_worker,
@@ -205,6 +188,7 @@ def main():
         "Blacksmith": rate_blacksmith,
         "Steel worker": rate_blacksmith,
         "Welder": rate_welder,
+        # Concrete & Material Rates
         "Cement": rate_cement,
         "Sand": rate_sand,
         "River Shingle (1-1/2\" gauge)": rate_shingle,
@@ -218,11 +202,15 @@ def main():
         "Timber scantling": rate_timber_scantling,
         "Tinber planks 1\"": rate_timber_planks,
         "Nails and spikes": rate_nails,
+        # Steel Rates
         "M.S. Bar": rate_steel_bar,
         "Reinforcement Steel": rate_steel_bar,
         "Binding Wire": rate_binding_wire,
         "Structural Steel": rate_structural_steel,
-        "R.S. girder": rate_structural_steel / 20.0, # Cwt Rate
+        # 📌 အသစ်ထည့်သွင်းလိုက်သော Rate Mapping များ
+        "R.S. girder": rate_rs_girder,
+        "Carriage to site": rate_carriage,
+        "Hoisting and fixing": rate_hoisting,
     }
 
     # ==========================================
@@ -366,9 +354,7 @@ def main():
                 u = row['unit']
 
                 req_qty = (std_qty / std_base_qty) * measured_qty
-                
-                # Dynamic Rate Lookup
-                unit_rate = get_dynamic_rate(part, rate_map, rate_structural_steel, rate_blacksmith)
+                unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
 
                 calc_rows.append({
@@ -379,7 +365,7 @@ def main():
                     "Amount (MMK)": round(amount, 2),
                 })
 
-                # Material vs Labour Categorization
+                # Material vs Labour Aggregate Categorization
                 part_lower = part.lower()
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
