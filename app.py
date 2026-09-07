@@ -71,30 +71,95 @@ def main():
     concrete_items = parse_excel_rates(concrete_path)
     iron_items = parse_excel_rates(iron_path)
 
-    # Master Rates Sidebar
-    st.sidebar.header("⚙️ Master Unit Rates (MMK)")
-    rate_worker = st.sidebar.number_input("Worker", value=15000.0)
-    rate_digger = st.sidebar.number_input("Digger", value=18000.0)
-    rate_mason = st.sidebar.number_input("Mason", value=25000.0)
-    rate_carpenter = st.sidebar.number_input("Carpenter", value=25000.0)
-    rate_maistry = st.sidebar.number_input("Maistry", value=30000.0)
-    rate_blacksmith = st.sidebar.number_input("Blacksmith / Steel Worker", value=28000.0)
-    rate_welder = st.sidebar.number_input("Welder", value=30000.0)
+    # ==========================================
+    # Sidebar Tools: Master Rates, Calculator & Converter
+    # ==========================================
+    st.sidebar.title("🛠️ Tools & Settings")
+    tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["⚙️ Master Rates", "🧮 Calc", "🔄 Converter"])
 
-    rate_cement = st.sidebar.number_input("Cement", value=12000.0)
-    rate_sand = st.sidebar.number_input("Sand", value=45000.0)
-    rate_shingle = st.sidebar.number_input("River Shingle", value=85000.0)
-    rate_gravel = st.sidebar.number_input("Gravel", value=60000.0)
-    rate_granite = st.sidebar.number_input("Granite chipping", value=95000.0)
-    rate_impermo = st.sidebar.number_input("Impermo", value=3500.0)
-    rate_ironite = st.sidebar.number_input("Ironite", value=4000.0)
-    rate_timber_scantling = st.sidebar.number_input("Timber scantling", value=35000.0)
-    rate_timber_planks = st.sidebar.number_input("Timber planks", value=1200.0)
-    rate_nails = st.sidebar.number_input("Nails and spikes", value=4500.0)
+    with tab_rates:
+        st.header("Master Unit Rates (MMK)")
+        rate_worker = st.number_input("Worker", value=15000.0)
+        rate_digger = st.number_input("Digger", value=18000.0)
+        rate_mason = st.number_input("Mason", value=25000.0)
+        rate_carpenter = st.number_input("Carpenter", value=25000.0)
+        rate_maistry = st.number_input("Maistry", value=30000.0)
+        rate_blacksmith = st.number_input("Blacksmith / Steel Worker", value=28000.0)
+        rate_welder = st.number_input("Welder", value=30000.0)
 
-    rate_steel_bar = st.sidebar.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
-    rate_binding_wire = st.sidebar.number_input("Binding Wire (Viss/Ib)", value=6500.0)
-    rate_structural_steel = st.sidebar.number_input("Structural Steel (Ton)", value=3000000.0)
+        rate_cement = st.number_input("Cement", value=12000.0)
+        rate_sand = st.number_input("Sand", value=45000.0)
+        rate_shingle = st.number_input("River Shingle", value=85000.0)
+        rate_gravel = st.number_input("Gravel", value=60000.0)
+        rate_granite = st.number_input("Granite chipping", value=95000.0)
+        rate_impermo = st.number_input("Impermo", value=3500.0)
+        rate_ironite = st.number_input("Ironite", value=4000.0)
+        rate_timber_scantling = st.number_input("Timber scantling", value=35000.0)
+        rate_timber_planks = st.number_input("Timber planks", value=1200.0)
+        rate_nails = st.number_input("Nails and spikes", value=4500.0)
+
+        rate_steel_bar = st.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
+        rate_binding_wire = st.number_input("Binding Wire (Viss/Ib)", value=6500.0)
+        rate_structural_steel = st.number_input("Structural Steel (Ton)", value=3000000.0)
+
+    # 🧮 Sidebar Quick Calculator
+    with tab_calc:
+        st.subheader("🧮 Quick Calculator")
+        calc_expr = st.text_input("Expression ရိုက်ပါ (e.g. 10*12.5 + 5):", value="")
+        if calc_expr:
+            try:
+                # Basic Safe Math Evaluation
+                allowed_chars = "0123456789+-*/(). "
+                if all(char in allowed_chars for char in calc_expr):
+                    res = eval(calc_expr)
+                    st.success(f"**Result = {res:,.4f}**")
+                else:
+                    st.error("သင်္ချာ ကိန်းဂဏန်းများသာ ရိုက်ထည့်ပါ။")
+            except Exception as e:
+                st.error("တွက်ချက်မှု မမှန်ကန်ပါ။")
+
+    # 🔄 Sidebar Unit Converter
+    with tab_conv:
+        st.subheader("🔄 Unit Converter")
+        conv_type = st.selectbox("Convert Type:", [
+            "Inches -> Feet",
+            "Sft <-> Sq.m",
+            "Cft <-> Cu.m",
+            "Steel Weight (Dia -> Kg/Ton)"
+        ])
+
+        if conv_type == "Inches -> Feet":
+            inch_val = st.number_input("Inches (လက်မ):", min_value=0.0, value=6.0)
+            st.info(f"👉 **{inch_val} inches = {inch_val / 12.0:.3f} ft**")
+
+        elif conv_type == "Sft <-> Sq.m":
+            sft_val = st.number_input("Sft:", min_value=0.0, value=100.0)
+            st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
+
+        elif conv_type == "Cft <-> Cu.m":
+            cft_val = st.number_input("Cft:", min_value=0.0, value=100.0)
+            st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
+
+        elif conv_type == "Steel Weight (Dia -> Kg/Ton)":
+            bar_dia = st.selectbox("Bar Size:", [
+                "10 mm (3/8\")", "12 mm (1/2\")", "16 mm (5/8\")", "20 mm (3/4\")", "25 mm (1\")"
+            ])
+            length_ft = st.number_input("Total Length (ft):", min_value=0.0, value=100.0)
+
+            # Weight per ft calculation (D^2 / 529 for lb/ft or mm^2 / 533 for kg/ft)
+            dia_mm_map = {
+                "10 mm (3/8\")": 10,
+                "12 mm (1/2\")": 12,
+                "16 mm (5/8\")": 16,
+                "20 mm (3/4\")": 20,
+                "25 mm (1\")": 25
+            }
+            d_mm = dia_mm_map[bar_dia]
+            wt_kg_per_ft = (d_mm * d_mm) / 533.0  # Approx weight kg/ft
+            total_kg = length_ft * wt_kg_per_ft
+            total_ton = total_kg / 1000.0
+
+            st.info(f"👉 **Weight = {total_kg:,.2f} Kg ({total_ton:.4f} Ton)**")
 
     rate_map = {
         "Worker": rate_worker,
