@@ -9,7 +9,7 @@ LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
     "smith", "machine driver", "charges", "labour",
-    "hoisting and fixing", "carriage to site"
+    "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
 @st.cache_data
@@ -112,8 +112,6 @@ def main():
         rate_steel_bar = st.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
         rate_binding_wire = st.number_input("Binding Wire (Viss/Ib)", value=6500.0)
         rate_structural_steel = st.number_input("Structural Steel (Ton)", value=3000000.0)
-        
-        # 📌 အသစ်ထည့်သွင်းလိုက်သော Rate များ (R.S. Girder & Services)
         rate_rs_girder = st.number_input("R.S. girder (per cwt)", value=150000.0)
         rate_carriage = st.number_input("Carriage to site (per cwt)", value=5000.0)
         rate_hoisting = st.number_input("Hoisting and fixing (per cwt)", value=15000.0)
@@ -176,7 +174,6 @@ def main():
             st.info(f"👉 **Weight = {total_kg:,.2f} Kg ({total_ton:.4f} Ton)**")
 
     rate_map = {
-        # Labour Rates
         "Worker": rate_worker,
         "Worker for carrying and ramming": rate_worker,
         "Worker for watering": rate_worker,
@@ -188,7 +185,6 @@ def main():
         "Blacksmith": rate_blacksmith,
         "Steel worker": rate_blacksmith,
         "Welder": rate_welder,
-        # Concrete & Material Rates
         "Cement": rate_cement,
         "Sand": rate_sand,
         "River Shingle (1-1/2\" gauge)": rate_shingle,
@@ -202,12 +198,10 @@ def main():
         "Timber scantling": rate_timber_scantling,
         "Tinber planks 1\"": rate_timber_planks,
         "Nails and spikes": rate_nails,
-        # Steel Rates
         "M.S. Bar": rate_steel_bar,
         "Reinforcement Steel": rate_steel_bar,
         "Binding Wire": rate_binding_wire,
         "Structural Steel": rate_structural_steel,
-        # 📌 အသစ်ထည့်သွင်းလိုက်သော Rate Mapping များ
         "R.S. girder": rate_rs_girder,
         "Carriage to site": rate_carriage,
         "Hoisting and fixing": rate_hoisting,
@@ -254,6 +248,7 @@ def main():
     st.subheader("📐 ၂။ Detail Measurement Sheet (အတိုင်းအတာများ ရိုက်ထည့်ပါ)")
 
     item_quantities = {}
+    ls_custom_rates = {}
 
     for idx, item in enumerate(selected_items_list):
         item_key = f"item_row_count_{item['item_no']}_{idx}"
@@ -264,63 +259,86 @@ def main():
             unit_str = str(item['unit']).lower().strip()
             num_rows = st.session_state[item_key]
 
+            # 📌 L.S / Lump sum စစ်ဆေးခြင်း
+            is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+
             meas_rows = []
             item_total_qty = 0.0
 
-            for r_idx in range(num_rows):
-                c_desc, c_no, c_l, c_b, c_h, c_ded = st.columns([2, 1, 1, 1, 1, 1])
-
-                p_desc = c_desc.text_input(
-                    "Particular Name",
-                    value=f"F{r_idx+1}" if "footing" in item['title'].lower() else f"Section {r_idx+1}",
-                    key=f"desc_{idx}_{r_idx}_{item['item_no']}"
-                )
-                no_val = c_no.number_input("No", min_value=1, value=1, key=f"no_{idx}_{r_idx}_{item['item_no']}")
-                l_val = c_l.number_input("L (ft)", min_value=0.0, value=10.0, key=f"l_{idx}_{r_idx}_{item['item_no']}")
-                b_val = c_b.number_input("B (ft)", min_value=0.0, value=10.0, key=f"b_{idx}_{r_idx}_{item['item_no']}")
-                h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
-                ded_val = c_ded.number_input("Deduction", min_value=0.0, value=0.0, key=f"ded_{idx}_{r_idx}_{item['item_no']}")
-
-                if 'rft' in unit_str:
-                    gross_qty = no_val * l_val
-                elif 'sft' in unit_str:
-                    if l_val > 0 and b_val > 0:
-                        gross_qty = no_val * l_val * b_val
-                    elif l_val > 0 and h_val > 0:
-                        gross_qty = no_val * l_val * h_val
-                    elif b_val > 0 and h_val > 0:
-                        gross_qty = no_val * b_val * h_val
-                    else:
-                        gross_qty = 0.0
-                elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
-                    gross_qty = no_val * l_val
-                else:
-                    gross_qty = no_val * l_val * b_val * h_val
-
-                sub_total = max(0.0, gross_qty - ded_val)
-                item_total_qty += sub_total
+            if is_lumpsum:
+                c_desc, c_no, c_rate = st.columns([3, 1, 2])
+                p_desc = c_desc.text_input("Particular Name", value="Lumpsum Job", key=f"desc_{idx}_{item['item_no']}")
+                no_val = c_no.number_input("Job / Qty", min_value=1, value=1, key=f"no_{idx}_{item['item_no']}")
+                
+                # L.S ဈေးနှုန်း သီးသန့် ရိုက်ထည့်ရန် Box
+                ls_rate = c_rate.number_input("Lump Sum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item['item_no']}")
+                
+                item_total_qty = float(no_val)
+                ls_custom_rates[item['item_no']] = ls_rate
 
                 meas_rows.append({
                     "Particular": p_desc,
                     "No": no_val,
-                    "L (ft)": l_val,
-                    "B (ft)": b_val,
-                    "H (ft)": h_val,
-                    "Deduction": ded_val,
-                    "Sub-total": round(sub_total, 2)
+                    "L (ft)": "-",
+                    "B (ft)": "-",
+                    "H (ft)": "-",
+                    "Deduction": "-",
+                    "Sub-total": no_val
                 })
+            else:
+                for r_idx in range(num_rows):
+                    c_desc, c_no, c_l, c_b, c_h, c_ded = st.columns([2, 1, 1, 1, 1, 1])
+
+                    p_desc = c_desc.text_input(
+                        "Particular Name",
+                        value=f"F{r_idx+1}" if "footing" in item['title'].lower() else f"Section {r_idx+1}",
+                        key=f"desc_{idx}_{r_idx}_{item['item_no']}"
+                    )
+                    no_val = c_no.number_input("No", min_value=1, value=1, key=f"no_{idx}_{r_idx}_{item['item_no']}")
+                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=10.0, key=f"l_{idx}_{r_idx}_{item['item_no']}")
+                    b_val = c_b.number_input("B (ft)", min_value=0.0, value=10.0, key=f"b_{idx}_{r_idx}_{item['item_no']}")
+                    h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
+                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=0.0, key=f"ded_{idx}_{r_idx}_{item['item_no']}")
+
+                    if 'rft' in unit_str:
+                        gross_qty = no_val * l_val
+                    elif 'sft' in unit_str:
+                        if l_val > 0 and b_val > 0:
+                            gross_qty = no_val * l_val * b_val
+                        elif l_val > 0 and h_val > 0:
+                            gross_qty = no_val * l_val * h_val
+                        elif b_val > 0 and h_val > 0:
+                            gross_qty = no_val * b_val * h_val
+                        else:
+                            gross_qty = 0.0
+                    elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
+                        gross_qty = no_val * l_val
+                    else:
+                        gross_qty = no_val * l_val * b_val * h_val
+
+                    sub_total = max(0.0, gross_qty - ded_val)
+                    item_total_qty += sub_total
+
+                    meas_rows.append({
+                        "Particular": p_desc,
+                        "No": no_val,
+                        "L (ft)": l_val,
+                        "B (ft)": b_val,
+                        "H (ft)": h_val,
+                        "Deduction": ded_val,
+                        "Sub-total": round(sub_total, 2)
+                    })
+
+                col_add, col_rem, col_blank = st.columns([1, 1, 4])
+                if col_add.button("➕ Add Particular Row", key=f"add_{idx}_{item['item_no']}"):
+                    st.session_state[item_key] += 1
+                    st.rerun()
+
+                if num_rows > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item['item_no']}"):
+                    st.session_state[item_key] -= 1
+                    st.rerun()
 
             item_quantities[item['item_no']] = item_total_qty
-
-            col_add, col_rem, col_blank = st.columns([1, 1, 4])
-            if col_add.button("➕ Add Particular Row", key=f"add_{idx}_{item['item_no']}"):
-                st.session_state[item_key] += 1
-                st.rerun()
-
-            if num_rows > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item['item_no']}"):
-                st.session_state[item_key] -= 1
-                st.rerun()
-
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             st.markdown(f"**Total Quantity for Item {item['item_no']} = `{item_total_qty:,.2f} {item['unit']}`**")
 
@@ -341,7 +359,34 @@ def main():
 
         st.markdown(f"#### 🔹 {idx+1}. Item {item_no} - {item['title']} ({measured_qty:,.2f} {item['unit']})")
 
-        if item['breakdown']:
+        unit_str = str(item['unit']).lower().strip()
+        is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+
+        # 📌 Lump Sum Breakdown မရှိသော်လည်း Direct Calculation လုပ်ပေးခြင်း
+        if is_lumpsum and not item['breakdown']:
+            ls_rate = ls_custom_rates.get(item_no, 0.0)
+            amount = measured_qty * ls_rate
+
+            calc_rows = [{
+                "Particular": item['title'],
+                "Unit": item['unit'],
+                "Req Qty": measured_qty,
+                "Rate (MMK)": ls_rate,
+                "Amount (MMK)": amount
+            }]
+
+            df_item = pd.DataFrame(calc_rows)
+            st.dataframe(df_item, use_container_width=True)
+
+            labour_summary[item['title']] = {
+                "unit": item['unit'],
+                "qty": measured_qty,
+                "rate": ls_rate,
+                "amount": amount
+            }
+            grand_total += amount
+
+        elif item['breakdown']:
             try:
                 std_base_qty = float(item['std_qty'])
             except (ValueError, TypeError):
@@ -365,7 +410,6 @@ def main():
                     "Amount (MMK)": round(amount, 2),
                 })
 
-                # Material vs Labour Aggregate Categorization
                 part_lower = part.lower()
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
@@ -414,6 +458,8 @@ def main():
 
     if mat_rows:
         st.table(pd.DataFrame(mat_rows))
+    else:
+        st.info("Material စရိတ် မရှိပါ။")
     st.markdown(f"**Total Material Cost = `{total_mat_cost:,.2f} MMK`**")
 
     st.divider()
@@ -435,6 +481,8 @@ def main():
 
     if lab_rows:
         st.table(pd.DataFrame(lab_rows))
+    else:
+        st.info("Labour စရိတ် မရှိပါ။")
     st.markdown(f"**Total Labour Cost = `{total_lab_cost:,.2f} MMK`**")
 
     st.divider()
