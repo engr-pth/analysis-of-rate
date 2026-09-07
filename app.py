@@ -10,27 +10,40 @@ def parse_excel_rates(file_path):
     if not os.path.exists(file_path):
         return []
     try:
-        df_raw = pd.read_excel(file_path)
+        # Excel ဖိုင်ထဲမှ Data များကို Date မဟုတ်ဘဲ String (Text) အဖြစ် အတင်းပြောင်းဖတ်ပါ
+        df_raw = pd.read_excel(file_path, dtype=str)
     except Exception as e:
-        st.error(f'ဖိုင်ဖတ်၍ မရပါ ({file_path}): {e}')
+        st.error(f"ဖိုင်ဖတ်၍ မရပါ ({file_path}): {e}")
         return []
 
     items = []
     current_item = None
 
     for idx, row in df_raw.iterrows():
-        item_no = str(row.iloc[0]).strip()
-        particular = str(row.iloc[1]).strip()
-        unit = str(row.iloc[2]).strip()
-        qty = row.iloc[3]
+        # Clean text
+        item_no = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ''
+        particular = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ''
+        unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
+        qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
 
-        if (
-            item_no in ['nan', 'No.', 'NaN']
-            and particular in ['nan', 'Particular', 'NaN']
-        ):
+        # Date သို့မဟုတ် NaT ပေါ်စေသည့် စာသားများကို ကျော်သွားမည်
+        if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
+            # အကယ်၍ Item No မဟုတ်ဘဲ Particulars သာရှိလျှင် Breakdown အောက်သို့ ထည့်မည်
+            if current_item and particular not in ['', 'nan', 'NaN', 'Particular']:
+                try:
+                    qty_val = float(qty)
+                except (ValueError, TypeError):
+                    qty_val = 0.0
+                
+                current_item['breakdown'].append({
+                    'particular': particular,
+                    'unit': unit,
+                    'qty': qty_val
+                })
             continue
 
-        if item_no not in ['nan', 'NaN'] and particular not in ['nan', 'NaN']:
+        # Item Header သစ်တွေ့လျှင်
+        if particular not in ['', 'nan', 'NaN', 'Particular']:
             if current_item:
                 items.append(current_item)
             current_item = {
@@ -38,25 +51,13 @@ def parse_excel_rates(file_path):
                 'title': particular,
                 'unit': unit,
                 'std_qty': qty,
-                'breakdown': [],
+                'breakdown': []
             }
-        elif current_item and particular not in ['nan', 'NaN']:
-            try:
-                qty_val = float(qty)
-            except (ValueError, TypeError):
-                qty_val = 0.0
-
-            current_item['breakdown'].append({
-                'particular': particular,
-                'unit': unit,
-                'qty': qty_val,
-            })
 
     if current_item:
         items.append(current_item)
 
     return items
-
 
 def main():
     st.set_page_config(
