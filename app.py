@@ -8,7 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
-    "smith", "machine driver", "charges", "labour"
+    "smith", "machine driver", "charges", "labour", "hoisting", "fixing"
 ]
 
 @st.cache_data
@@ -59,6 +59,34 @@ def parse_excel_rates(file_path):
         items.append(current_item)
 
     return items
+
+
+def get_dynamic_rate(part_name, rate_map, default_structural_rate, default_labour_rate):
+    """
+    Particular နာမည်အတိုင်း rate_map ထဲတွင် မတွေ့ပါက Keyword များဖြင့် ရှာဖွေပြီး
+    သီးခြား Rate ချိတ်ဆက်ပေးသော Function
+    """
+    # ၁။ တိုက်ရိုက် ကိုက်ညီမှု ရှိမရှိ စစ်ဆေးခြင်း
+    if part_name in rate_map:
+        return rate_map[part_name]
+    
+    p_lower = part_name.lower().strip()
+
+    # 2. Key-based Flexible Matching Logic
+    if "r.s." in p_lower or "girder" in p_lower or "steel" in p_lower or "iron" in p_lower or "beam" in p_lower:
+        # 1 Ton = 20 Cwt ဖြစ်၍ Cwt ယူနစ်ဖြစ်ပါက Ton Rate ကို 20 ဖြင့် စားပေးခြင်း
+        return default_structural_rate / 20.0
+
+    elif "carriage" in p_lower or "transport" in p_lower or "carrying" in p_lower:
+        return 5000.0  # Carriage per unit default rate
+
+    elif "hoisting" in p_lower or "fixing" in p_lower or "installation" in p_lower:
+        return default_labour_rate
+
+    elif any(k in p_lower for k in ["worker", "labour", "digger"]):
+        return rate_map.get("Worker", 15000.0)
+
+    return 0.0
 
 
 def main():
@@ -194,6 +222,7 @@ def main():
         "Reinforcement Steel": rate_steel_bar,
         "Binding Wire": rate_binding_wire,
         "Structural Steel": rate_structural_steel,
+        "R.S. girder": rate_structural_steel / 20.0, # Cwt Rate
     }
 
     # ==========================================
@@ -337,7 +366,9 @@ def main():
                 u = row['unit']
 
                 req_qty = (std_qty / std_base_qty) * measured_qty
-                unit_rate = rate_map.get(part, 0.0)
+                
+                # Dynamic Rate Lookup
+                unit_rate = get_dynamic_rate(part, rate_map, rate_structural_steel, rate_blacksmith)
                 amount = req_qty * unit_rate
 
                 calc_rows.append({
@@ -348,7 +379,7 @@ def main():
                     "Amount (MMK)": round(amount, 2),
                 })
 
-                # Material vs Labour Aggregate Categorization
+                # Material vs Labour Categorization
                 part_lower = part.lower()
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
