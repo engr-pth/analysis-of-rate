@@ -362,7 +362,7 @@ def main():
     st.divider()
 
     # Summary Table
-    st.subheader("📜 ရွေးချယ်ခဲ့သော လုပ်ငန်းများ၏ စုစုပေါင်း အနှစ်ချုပ် (BOQ Summary)")
+    st.subheader("📜 ရွေးချယ်ခဲ့သော လုပ်ငန်းများ၏ စုစုပေါင်း အနှစ်ချုပ် (Abstract of Costs)")
     st.table(pd.DataFrame(summary_rows))
 
     st.metric(label="💰 စုစုပေါင်း ကုန်ကျစရိတ် (Grand Total Estimate)", value=f"{grand_total:,.2f} MMK")
