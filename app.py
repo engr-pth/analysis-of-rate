@@ -177,10 +177,7 @@ def parse_excel_rates(file_path):
 
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Excel/CSV ဖတ်ရှုရာတွင် မည်သည့် အမှားအယွင်းမှ မဖြစ်ပေါ်စေဘဲ
-    - Exact Category Match
-    - Particular Name နဲ့ Measurement Values (L, B, H, Ded) များ
-    တိကျစွာ Auto-Import ပြုလုပ်ပေးသည့် Safe Function
+    Excel/CSV မှ Data များကို တိကျစွာ Import လုပ်ပေးပြီး Streamlit Error မတက်အောင် ပြင်ဆင်ထားသော Function
     """
     try:
         # File Pointer ကို အစသို့ ပြန်ပို့ခြင်း (Streamlit BytesIO Fix)
@@ -253,7 +250,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         # Excel ဖိုင်၏ Content တစ်ခုလုံးကို စစ်ဆေးခြင်း
         full_text_str = " ".join(df_raw.astype(str).values.flatten()).lower()
 
-        # Category Matching Logic
+        # Category Matching Logic (Concrete / Iron Work မှ မသက်ဆိုင်သော Item 3 မပါအောင် စစ်ပေးခြင်း)
         selected_ew, selected_cc, selected_ir = [], [], []
 
         # 1. Earthwork
@@ -263,21 +260,19 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                 if item_no_str in excel_item_nos:
                     selected_ew.append(k)
 
-        # 2. Concrete Work (Avoid false match with Earthwork Item 3)
+        # 2. Concrete Work
         if 'cc' in all_item_maps:
             for k, v in all_item_maps['cc'].items():
                 item_no_str = str(v.get('item_no', '')).strip()
                 if item_no_str in excel_item_nos:
-                    # Concrete နဲ့ ပတ်သက်တဲ့ Keyword ပါမှသာ Select လုပ်မည်
                     if any(kw in full_text_str for kw in ['concrete', 'cement', 'c.c', '1:2:4', '1:3:6']):
                         selected_cc.append(k)
 
-        # 3. Iron & Steel Work (Avoid false match with Earthwork Item 3)
+        # 3. Iron & Steel Work
         if 'ir' in all_item_maps:
             for k, v in all_item_maps['ir'].items():
                 item_no_str = str(v.get('item_no', '')).strip()
                 if item_no_str in excel_item_nos:
-                    # Iron/Steel နဲ့ ပတ်သက်တဲ့ Keyword ပါမှသာ Select လုပ်မည်
                     if any(kw in full_text_str for kw in ['iron', 'steel', 'rebar', 'w.i', 'kg', 'ton', 'bar']):
                         selected_ir.append(k)
 
@@ -346,9 +341,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         st.success(f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို အောင်မြင်စွာ Auto-Import ပြုလုပ်ပြီးပါပြီ။")
 
     except Exception as e:
-        error_details = traceback.format_exc()
         st.error(f"❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
-        st.code(error_details, language='python')
 
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
