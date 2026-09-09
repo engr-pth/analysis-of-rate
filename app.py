@@ -262,8 +262,9 @@ def main():
             unit_str = str(item['unit']).lower().strip()
             num_rows = st.session_state[item_key]
 
-            # 📌 L.S / Lump sum စစ်ဆေးခြင်း
             is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+            is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
+            is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
             meas_rows = []
             item_total_qty = 0.0
@@ -272,8 +273,6 @@ def main():
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
                 p_desc = c_desc.text_input("Particular Name", value="Lumpsum Job", key=f"desc_{idx}_{item['item_no']}")
                 no_val = c_no.number_input("Job / Qty", min_value=1, value=1, key=f"no_{idx}_{item['item_no']}")
-                
-                # L.S ဈေးနှုန်း သီးသန့် ရိုက်ထည့်ရန် Box
                 ls_rate = c_rate.number_input("Lump Sum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item['item_no']}")
                 
                 item_total_qty = float(no_val)
@@ -290,30 +289,35 @@ def main():
                 })
             else:
                 for r_idx in range(num_rows):
-                    c_desc, c_no, c_l, c_b, c_h, c_ded = st.columns([2, 1, 1, 1, 1, 1])
+                    if is_sft:
+                        c_desc, c_no, c_l, c_b, c_ded = st.columns([2, 1, 1, 1, 1])
+                    elif is_rft:
+                        c_desc, c_no, c_l, c_ded = st.columns([3, 1, 1, 1])
+                    else:
+                        c_desc, c_no, c_l, c_b, c_h, c_ded = st.columns([2, 1, 1, 1, 1, 1])
 
                     p_desc = c_desc.text_input(
                         "Particular Name",
-                        value=f"F{r_idx+1}" if "footing" in item['title'].lower() else f"Section {r_idx+1}",
+                        value=f"Section {r_idx+1}",
                         key=f"desc_{idx}_{r_idx}_{item['item_no']}"
                     )
                     no_val = c_no.number_input("No", min_value=1, value=1, key=f"no_{idx}_{r_idx}_{item['item_no']}")
-                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=10.0, key=f"l_{idx}_{r_idx}_{item['item_no']}")
-                    b_val = c_b.number_input("B (ft)", min_value=0.0, value=10.0, key=f"b_{idx}_{r_idx}_{item['item_no']}")
-                    h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
+                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=50.0 if is_sft else 10.0, key=f"l_{idx}_{r_idx}_{item['item_no']}")
+                    
+                    b_val = 0.0
+                    if not is_rft:
+                        b_val = c_b.number_input("B (ft)", min_value=0.0, value=50.0 if is_sft else 10.0, key=f"b_{idx}_{r_idx}_{item['item_no']}")
+                    
+                    h_val = 0.0
+                    if not is_sft and not is_rft:
+                        h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
+                    
                     ded_val = c_ded.number_input("Deduction", min_value=0.0, value=0.0, key=f"ded_{idx}_{r_idx}_{item['item_no']}")
 
-                    if 'rft' in unit_str:
+                    if is_rft:
                         gross_qty = no_val * l_val
-                    elif 'sft' in unit_str:
-                        if l_val > 0 and b_val > 0:
-                            gross_qty = no_val * l_val * b_val
-                        elif l_val > 0 and h_val > 0:
-                            gross_qty = no_val * l_val * h_val
-                        elif b_val > 0 and h_val > 0:
-                            gross_qty = no_val * b_val * h_val
-                        else:
-                            gross_qty = 0.0
+                    elif is_sft:
+                        gross_qty = no_val * l_val * b_val
                     elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
                         gross_qty = no_val * l_val
                     else:
@@ -326,8 +330,8 @@ def main():
                         "Particular": p_desc,
                         "No": no_val,
                         "L (ft)": l_val,
-                        "B (ft)": b_val,
-                        "H (ft)": h_val,
+                        "B (ft)": b_val if not is_rft else "-",
+                        "H (ft)": h_val if (not is_sft and not is_rft) else "-",
                         "Deduction": ded_val,
                         "Sub-total": round(sub_total, 2)
                     })
@@ -348,7 +352,7 @@ def main():
     st.divider()
 
     # ==========================================
-    # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate (Builder's Estimate Format)
+    # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate
     # ==========================================
     st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Estimate")
 
@@ -368,7 +372,6 @@ def main():
         display_rows = []
         item_total_cost = 0.0
 
-        # Item Header Row
         display_rows.append({
             "Item": item_no,
             "Particular": item['title'],
@@ -436,7 +439,6 @@ def main():
                 else:
                     mat_breakdown.append(row_data)
 
-                # Global Summary ထဲထည့်ရန်
                 target_dict = labour_summary if is_labour else material_summary
                 if part not in target_dict:
                     target_dict[part] = {"unit": u, "qty": req_qty, "rate": unit_rate, "amount": amount}
@@ -444,7 +446,6 @@ def main():
                     target_dict[part]["qty"] += req_qty
                     target_dict[part]["amount"] += amount
 
-            # Material Section ထည့်သွင်းခြင်း
             if mat_breakdown:
                 display_rows.append({
                     "Item": "", "Particular": "  📦 Material", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
@@ -460,7 +461,6 @@ def main():
                         "Amount (MMK)": f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
                     })
 
-            # Labour Section ထည့်သွင်းခြင်း
             if lab_breakdown:
                 display_rows.append({
                     "Item": "", "Particular": "  👷 Labour", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
@@ -476,7 +476,6 @@ def main():
                         "Amount (MMK)": f"{l['amount']:,.2f}"
                     })
 
-        # Total Cost Row
         display_rows.append({
             "Item": "",
             "Particular": "  💰 Total Cost",
