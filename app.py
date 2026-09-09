@@ -178,20 +178,20 @@ def parse_excel_rates(file_path):
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
     Excel/CSV ဖိုင် တင်လိုက်သည်နှင့် Normal Template ရော Export ထုတ်ထားသော Measurement Sheet ကိုပါ
-    အလိုအလျောက် ရှာဖွေဖတ်ရှုပြီး Auto-Select & Import လုပ်ပေးသည့် Function
+    အလိုအလျောက် ရှာဖွေဖတ်ရှုပြီး Auto-Select & Import လုပ်ပေးသည့် Function (Error Handled)
     """
     try:
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
-            # First, check raw dataframe without header
+            # First, check raw dataframe without header to locate header row
             df_raw = pd.read_excel(uploaded_file, header=None)
             
             # Find row index containing 'item' in column values
             header_row_idx = None
             for idx, row in df_raw.iterrows():
-                row_vals = row.astype(str).str.lower().tolist()
-                if any('item' in v for v in row_vals if v):
+                row_vals = row.dropna().astype(str).str.lower().tolist()
+                if any('item' in v for v in row_vals):
                     header_row_idx = idx
                     break
             
@@ -203,22 +203,23 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         # Clean column names
         df.columns = [str(c).strip().lower() for c in df.columns]
         
+        # Safe Column Matching
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'desc' in c or 'particular' in c), None)
-        col_no = next((c for c in df.columns if 'no' in c), None)
-        col_l = next((c for c in df.columns if 'l' in c or 'length' in c), None)
-        col_b = next((c for c in df.columns if 'b' in c or 'breadth' in c or 'width' in c), None)
-        col_h = next((c for c in df.columns if 'h' in c or 'height' in c or 'depth' in c), None)
-        col_ded = next((c for c in df.columns if 'ded' in c), None)
-        col_type = next((c for c in df.columns if 'type' in c or 'deduction' in c), None)
+        col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
+        col_l = next((c for c in df.columns if 'l ' in c or 'l(' in c or 'length' in c or c == 'l'), None)
+        col_b = next((c for c in df.columns if 'b ' in c or 'b(' in c or 'breadth' in c or 'width' in c or c == 'b'), None)
+        col_h = next((c for c in df.columns if 'h ' in c or 'h(' in c or 'height' in c or 'depth' in c or c == 'h'), None)
+        col_ded = next((c for c in df.columns if 'ded' in c and 'type' not in c), None)
+        col_type = next((c for c in df.columns if 'type' in c), None)
 
         if not col_item:
-            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' Column မပါဝင်ပါ။ အခြား Template ဖိုင် သုံးကြည့်ပါ။")
+            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' Column မပါဝင်ပါ။ သင့်တော်သော Excel Template ဖိုင် တင်ပေးပါ။")
             return
 
-        # Clean values & filter out empty or total summary rows
+        # Filter out rows with invalid or header-like item_nos
         valid_rows = df[df[col_item].notna() & (df[col_item].astype(str).str.strip() != '')].copy()
-        valid_rows = valid_rows[~valid_rows[col_item].astype(str).str.lower().str.contains('item no|total|detail')]
+        valid_rows = valid_rows[~valid_rows[col_item].astype(str).str.lower().str.contains('item no|total|detail|description')]
 
         # Excel ဖိုင်ထဲတွင် ပါဝင်သော Item No များ
         excel_item_nos = valid_rows[col_item].astype(str).str.strip().unique().tolist()
@@ -227,12 +228,12 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.warning("⚠️ Excel ဖိုင်ထဲတွင် Item No. များ ရှာမတွေ့ပါ။")
             return
 
-        # Multiselect State များကို Auto-Select လုပ်ပေးရန် ပြင်ဆင်ခြင်း
+        # Multiselect State များကို Auto-Select လုပ်ပေးရန်
         st.session_state['selected_ew'] = [k for k, v in all_item_maps['ew'].items() if str(v['item_no']).strip() in excel_item_nos]
         st.session_state['selected_cc'] = [k for k, v in all_item_maps['cc'].items() if str(v['item_no']).strip() in excel_item_nos]
         st.session_state['selected_ir'] = [k for k, v in all_item_maps['ir'].items() if str(v['item_no']).strip() in excel_item_nos]
 
-        # တောက်လျှောက် Session State Measurement Row Data များဖြည့်သွင်းခြင်း
+        # Row Data များကို State ထဲသို့ Auto-Import လုပ်ခြင်း
         all_items_flat = []
         for category in ['ew', 'cc', 'ir']:
             for key, item in all_item_maps[category].items():
@@ -259,6 +260,8 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
 
                     def safe_float(val):
                         try:
+                            if pd.isna(val) or str(val).strip() in ['-', '', 'nan', 'NaN']:
+                                return 0.0
                             return float(val)
                         except (ValueError, TypeError):
                             return 0.0
