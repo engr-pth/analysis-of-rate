@@ -178,25 +178,36 @@ def parse_excel_rates(file_path):
 
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Excel/CSV မှ Data များကို တိကျစွာ Import လုပ်ပေးပြီး Exception မှန်သမျှကို Safe Handling ပြုလုပ်ပေးထားသော Function
+    Excel/CSV ဖတ်ရှုခြင်းနှင့် Error မပျောက်သွားအောင် Session State ဖြင့် ထိန်းပေးထားသော Function
     """
+    # ယခင် Error သို့မဟုတ် Log အဟောင်းများကို ရှင်းထုတ်ခြင်း
+    st.session_state['last_excel_error'] = None
+
     try:
         if uploaded_file is None:
-            st.warning("⚠️ ဖိုင်တင်သွင်းထားခြင်း မရှိပါ။")
             return
 
-        # File Pointer ကို အစသို့ ပြန်ပို့ခြင်း (Streamlit BytesIO Fix)
+        # File Pointer ကို အစသို့ ပြန်ပို့ခြင်း
         if hasattr(uploaded_file, 'seek'):
             uploaded_file.seek(0)
 
         file_name = getattr(uploaded_file, 'name', '').lower()
 
-        # Excel / CSV ဖတ်ရှုခြင်း
-        if file_name.endswith('.csv'):
-            df_raw = pd.read_csv(uploaded_file, header=None)
-        else:
-            df_raw = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
-            
+        # Engine လွတ်လပ်စွာ ဖတ်နိုင်ရန် Try-Except Wrapping
+        try:
+            if file_name.endswith('.csv'):
+                df_raw = pd.read_csv(uploaded_file, header=None)
+            else:
+                df_raw = pd.read_excel(uploaded_file, header=None)
+        except Exception as read_err:
+            # openpyxl engine မရှိပါက သို့မဟုတ် Excel format ကြောင့်ဖြစ်လျှင် fallback ပြန်လုပ်ခြင်း
+            if hasattr(uploaded_file, 'seek'):
+                uploaded_file.seek(0)
+            if file_name.endswith('.csv'):
+                df_raw = pd.read_csv(uploaded_file, header=None)
+            else:
+                df_raw = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
+
         # Header Row တိကျစွာ ရှာဖွေခြင်း
         header_row_idx = None
         for idx, row in df_raw.iterrows():
@@ -212,17 +223,16 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             if file_name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file, header=header_row_idx)
             else:
-                df = pd.read_excel(uploaded_file, header=header_row_idx, engine='openpyxl')
+                df = pd.read_excel(uploaded_file, header=header_row_idx)
         else:
             if file_name.endswith('.csv'):
                 df = pd.read_csv(uploaded_file)
             else:
-                df = pd.read_excel(uploaded_file, engine='openpyxl')
+                df = pd.read_excel(uploaded_file)
 
-        # Column Header များအား Clean ပြုလုပ်ခြင်း
+        # Column Name Clean
         df.columns = [str(c).strip().lower() for c in df.columns]
         
-        # Robust Column Search
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'particular' in c or 'desc' in c), None)
         col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
@@ -233,10 +243,9 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         col_type = next((c for c in df.columns if 'type' in c), None)
 
         if not col_item or not col_desc:
-            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။")
+            st.session_state['last_excel_error'] = "❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။"
             return
 
-        # Double Format Normalization (1.0 -> "1" / Float string cleanup)
         def clean_str_item(val):
             if pd.isna(val):
                 return ""
@@ -257,12 +266,11 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
 
         if not excel_item_nos:
-            st.warning("⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။")
+            st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
         full_text_str = " ".join(df_raw.astype(str).values.flatten()).lower()
 
-        # Item Selection Matching
         selected_ew, selected_cc, selected_ir = [], [], []
 
         if 'ew' in all_item_maps:
@@ -344,11 +352,12 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     st.session_state[rows_state_key] = new_rows
                     imported_rows_count += len(new_rows)
 
-        st.success(f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို အောင်မြင်စွာ Auto-Import ပြုလုပ်ပြီးပါပြီ။")
+        st.session_state['excel_import_success'] = f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို အောင်မြင်စွာ Auto-Import ပြုလုပ်ပြီးပါပြီ။"
 
     except Exception as e:
-        st.error(f"❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
-        st.code(traceback.format_exc(), language="python")
+        # Error အပြည့်အစုံကို Session State ထဲ သိမ်းထားမည်
+        err_msg = traceback.format_exc()
+        st.session_state['last_excel_error'] = f"❌ Exception: {e}\n\n{err_msg}"
 
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
