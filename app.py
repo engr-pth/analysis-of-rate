@@ -262,7 +262,7 @@ def main():
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
-        # Session State List မရှိသေးပါက Default အစပြုပေးခြင်း
+        # Session State List အား Default အစပြုခြင်း
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
                 {
@@ -271,7 +271,8 @@ def main():
                     "l": 50.0 if is_sft else 10.0,
                     "b": 50.0 if is_sft else 10.0,
                     "h": 5.0,
-                    "ded": 0.0
+                    "ded": 0.0,
+                    "is_deduction_row": False
                 }
             ]
 
@@ -294,7 +295,7 @@ def main():
                     "L (ft)": "-",
                     "B (ft)": "-",
                     "H (ft)": "-",
-                    "Deduction": "-",
+                    "Type": "Add",
                     "Sub-total": no_val
                 })
             else:
@@ -303,11 +304,11 @@ def main():
 
                 for r_idx, r_data in enumerate(current_rows):
                     if is_sft:
-                        c_desc, c_no, c_l, c_b, c_ded, c_cp = st.columns([2.5, 1, 1, 1, 1, 1])
+                        c_desc, c_no, c_l, c_b, c_ded, c_is_ded, c_cp = st.columns([2, 0.8, 0.8, 0.8, 0.8, 1, 0.8])
                     elif is_rft:
-                        c_desc, c_no, c_l, c_ded, c_cp = st.columns([3, 1, 1, 1, 1])
+                        c_desc, c_no, c_l, c_ded, c_is_ded, c_cp = st.columns([2.5, 0.8, 0.8, 0.8, 1, 0.8])
                     else:
-                        c_desc, c_no, c_l, c_b, c_h, c_ded, c_cp = st.columns([2, 1, 1, 1, 1, 1, 1])
+                        c_desc, c_no, c_l, c_b, c_h, c_ded, c_is_ded, c_cp = st.columns([2, 0.8, 0.8, 0.8, 0.8, 0.8, 1, 0.8])
 
                     p_desc = c_desc.text_input(
                         "Particular Name",
@@ -325,21 +326,26 @@ def main():
                     if not is_sft and not is_rft:
                         h_val = c_h.number_input("H (ft)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
                     
-                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data["ded"]), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
 
-                    # State update
+                    # Deduction Row Checkbox
+                    st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
+                    is_ded_row = c_is_ded.checkbox("➖ Deduction Row", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
+
+                    # State Updates
                     r_data["desc"] = p_desc
                     r_data["no"] = no_val
                     r_data["l"] = l_val
                     r_data["b"] = b_val
                     r_data["h"] = h_val
                     r_data["ded"] = ded_val
+                    r_data["is_deduction_row"] = is_ded_row
 
-                    # Copy Button per Row
-                    st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
-                    if c_cp.button("📋 Copy Row", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
+                    # Copy Button
+                    if c_cp.button("📋 Copy", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
                         row_to_copy = dict(r_data)
 
+                    # Calculation Logic
                     if is_rft:
                         gross_qty = no_val * l_val
                     elif is_sft:
@@ -349,8 +355,14 @@ def main():
                     else:
                         gross_qty = no_val * l_val * b_val * h_val
 
-                    sub_total = max(0.0, gross_qty - ded_val)
-                    item_total_qty += sub_total
+                    row_qty = max(0.0, gross_qty - ded_val)
+
+                    if is_ded_row:
+                        item_total_qty -= row_qty
+                        sub_total_display = -round(row_qty, 2)
+                    else:
+                        item_total_qty += row_qty
+                        sub_total_display = round(row_qty, 2)
 
                     meas_rows.append({
                         "Particular": p_desc,
@@ -359,10 +371,11 @@ def main():
                         "B (ft)": b_val if not is_rft else "-",
                         "H (ft)": h_val if (not is_sft and not is_rft) else "-",
                         "Deduction": ded_val,
-                        "Sub-total": round(sub_total, 2)
+                        "Row Type": "➖ Deduction" if is_ded_row else "➕ Addition",
+                        "Sub-total": sub_total_display
                     })
 
-                # Copy Button နှိပ်ခဲ့ပါက Row အသစ်အဖြစ် ထည့်ပေးခြင်း
+                # Copy Trigger
                 if row_to_copy is not None:
                     copied_row = dict(row_to_copy)
                     copied_row["desc"] = f"{copied_row['desc']} (Copy)"
@@ -377,7 +390,8 @@ def main():
                         "l": 50.0 if is_sft else 10.0,
                         "b": 50.0 if is_sft else 10.0,
                         "h": 5.0,
-                        "ded": 0.0
+                        "ded": 0.0,
+                        "is_deduction_row": False
                     })
                     st.rerun()
 
@@ -385,6 +399,7 @@ def main():
                     st.session_state[rows_state_key].pop()
                     st.rerun()
 
+            item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             st.markdown(f"**Total Quantity for Item {item_no_str} = `{item_total_qty:,.2f} {item['unit']}`**")
