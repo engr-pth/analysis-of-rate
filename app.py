@@ -1,6 +1,10 @@
 import os
+import io
 import pandas as pd
 import streamlit as st
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -60,6 +64,195 @@ def parse_excel_rates(file_path):
         items.append(current_item)
 
     return items
+
+
+# =========================================================
+# Excel Helper Functions (Formulas & Styling embedded)
+# =========================================================
+
+def export_measurement_sheet_excel(selected_items_list, st_session_state):
+    """Detail Measurement Sheet ကို Excel Formula များဖြင့် Export ထုတ်ပေးသည့် Function"""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Measurement Sheet"
+
+    # Title Styling
+    ws['A1'] = "DETAIL MEASUREMENT SHEET"
+    ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
+    
+    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
+    
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
+    thin_border = Border(left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
+                         top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9'))
+
+    row_idx = 3
+
+    for idx, item in enumerate(selected_items_list):
+        item_no_str = str(item['item_no'])
+        rows_state_key = f"rows_data_{item_no_str}_{idx}"
+
+        unit_str = str(item['unit']).lower().strip()
+        is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+        is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
+        is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
+
+        # Item Header Row
+        ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['title']} ({item['unit']})").font = Font(bold=True, size=11)
+        ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=9)
+        row_idx += 1
+
+        # Table Header
+        for col_idx, text in enumerate(headers, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=text)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+        row_idx += 1
+
+        start_data_row = row_idx
+
+        if is_lumpsum:
+            ws.cell(row=row_idx, column=1, value=item_no_str)
+            ws.cell(row=row_idx, column=2, value="Lumpsum Job")
+            ws.cell(row=row_idx, column=3, value=1)
+            ws.cell(row=row_idx, column=8, value="Add")
+            # Formula: Subtotal = No
+            ws.cell(row=row_idx, column=9, value=f"=C{row_idx}")
+            row_idx += 1
+        else:
+            current_rows = st_session_state.get(rows_state_key, [])
+            for r in current_rows:
+                ws.cell(row=row_idx, column=1, value=item_no_str)
+                ws.cell(row=row_idx, column=2, value=r['desc'])
+                ws.cell(row=row_idx, column=3, value=r['no'])
+                ws.cell(row=row_idx, column=4, value=r['l'])
+                ws.cell(row=row_idx, column=5, value=r['b'] if not is_rft else "-")
+                ws.cell(row=row_idx, column=6, value=r['h'] if (not is_sft and not is_rft) else "-")
+                ws.cell(row=row_idx, column=7, value=r['ded'])
+                ws.cell(row=row_idx, column=8, value="Deduction" if r.get("is_deduction_row") else "Addition")
+
+                # Formula for Sub-total calculation in Excel
+                if is_rft:
+                    mult_expr = f"C{row_idx}*D{row_idx}"
+                elif is_sft:
+                    mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}"
+                elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
+                    mult_expr = f"C{row_idx}*D{row_idx}"
+                else:
+                    mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}*F{row_idx}"
+
+                # Formula with IF condition for Deduction / Addition
+                formula_str = f"=IF(H{row_idx}=\"Deduction\", -1 * MAX(0, ({mult_expr}) - G{row_idx}), MAX(0, ({mult_expr}) - G{row_idx}))"
+                ws.cell(row=row_idx, column=9, value=formula_str)
+
+                for c in range(1, 10):
+                    ws.cell(row=row_idx, column=c).border = thin_border
+
+                row_idx += 1
+
+        end_data_row = row_idx - 1
+
+        # Total Row with =SUM() Formula
+        ws.cell(row=row_idx, column=2, value=f"Total Quantity ({item['unit']})").font = Font(bold=True)
+        ws.cell(row=row_idx, column=9, value=f"=MAX(0, SUM(I{start_data_row}:I{end_data_row}))").font = Font(bold=True)
+        ws.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+        row_idx += 2
+
+    # Column Width adjustment
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def export_boq_summary_excel(material_summary, labour_summary):
+    """BOQ Material & Labour Summary ကို Excel Formula ပါဝင်အောင် Export ထုတ်ပေးသည့် Function"""
+    wb = openpyxl.Workbook()
+    
+    # ----------------------------------------
+    # 1. Material Breakdown Sheet
+    # ----------------------------------------
+    ws_mat = wb.active
+    ws_mat.title = "Material Summary"
+
+    ws_mat['A1'] = "MATERIAL COST BREAKDOWN (BOQ)"
+    ws_mat['A1'].font = Font(size=14, bold=True, color='1F497D')
+
+    headers = ["No.", "Particular Description", "Unit", "Quantity", "Rate (MMK)", "Amount (MMK)"]
+    header_fill = PatternFill(start_color="366092", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws_mat.cell(row=3, column=col_idx, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    r_idx = 4
+    for idx, (p_name, data) in enumerate(material_summary.items(), start=1):
+        ws_mat.cell(row=r_idx, column=1, value=idx)
+        ws_mat.cell(row=r_idx, column=2, value=p_name)
+        ws_mat.cell(row=r_idx, column=3, value=data['unit'])
+        ws_mat.cell(row=r_idx, column=4, value=data['qty'])
+        ws_mat.cell(row=r_idx, column=5, value=data['rate'])
+        # Dynamic Formula: Amount = Qty * Rate
+        ws_mat.cell(row=r_idx, column=6, value=f"=D{r_idx}*E{r_idx}")
+        ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
+        r_idx += 1
+
+    # Total Material Cost Formula =SUM()
+    ws_mat.cell(row=r_idx, column=2, value="TOTAL MATERIAL COST").font = Font(bold=True)
+    ws_mat.cell(row=r_idx, column=6, value=f"=SUM(F4:F{r_idx-1})").font = Font(bold=True)
+    ws_mat.cell(row=r_idx, column=6).fill = PatternFill(start_color="D9E1F2", fill_type="solid")
+    ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
+
+    # ----------------------------------------
+    # 2. Labour Breakdown Sheet
+    # ----------------------------------------
+    ws_lab = wb.create_sheet(title="Labour Summary")
+    ws_lab['A1'] = "LABOUR COST BREAKDOWN (BOQ)"
+    ws_lab['A1'].font = Font(size=14, bold=True, color='1F497D')
+
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws_lab.cell(row=3, column=col_idx, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    r_idx = 4
+    for idx, (p_name, data) in enumerate(labour_summary.items(), start=1):
+        ws_lab.cell(row=r_idx, column=1, value=idx)
+        ws_lab.cell(row=r_idx, column=2, value=p_name)
+        ws_lab.cell(row=r_idx, column=3, value=data['unit'])
+        ws_lab.cell(row=r_idx, column=4, value=data['qty'])
+        ws_lab.cell(row=r_idx, column=5, value=data['rate'])
+        # Dynamic Formula: Amount = Qty * Rate
+        ws_lab.cell(row=r_idx, column=6, value=f"=D{r_idx}*E{r_idx}")
+        ws_lab.cell(row=r_idx, column=6).number_format = '#,##0.00'
+        r_idx += 1
+
+    # Total Labour Cost Formula =SUM()
+    ws_lab.cell(row=r_idx, column=2, value="TOTAL LABOUR COST").font = Font(bold=True)
+    ws_lab.cell(row=r_idx, column=6, value=f"=SUM(F4:F{r_idx-1})").font = Font(bold=True)
+    ws_lab.cell(row=r_idx, column=6).fill = PatternFill(start_color="D9E1F2", fill_type="solid")
+    ws_lab.cell(row=r_idx, column=6).number_format = '#,##0.00'
+
+    # Auto Column Adjustments
+    for ws in [ws_mat, ws_lab]:
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 
 def main():
@@ -262,7 +455,6 @@ def main():
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
-        # Session State List အား Default အစပြုခြင်း
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
                 {
@@ -328,11 +520,9 @@ def main():
                     
                     ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
 
-                    # Deduction Row Checkbox
                     st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
                     is_ded_row = c_is_ded.checkbox("➖ Deduction Row", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
 
-                    # State Updates
                     r_data["desc"] = p_desc
                     r_data["no"] = no_val
                     r_data["l"] = l_val
@@ -341,11 +531,9 @@ def main():
                     r_data["ded"] = ded_val
                     r_data["is_deduction_row"] = is_ded_row
 
-                    # Copy Button
                     if c_cp.button("📋 Copy", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
                         row_to_copy = dict(r_data)
 
-                    # Calculation Logic
                     if is_rft:
                         gross_qty = no_val * l_val
                     elif is_sft:
@@ -375,7 +563,6 @@ def main():
                         "Sub-total": sub_total_display
                     })
 
-                # Copy Trigger
                 if row_to_copy is not None:
                     copied_row = dict(row_to_copy)
                     copied_row["desc"] = f"{copied_row['desc']} (Copy)"
@@ -403,6 +590,15 @@ def main():
             item_quantities[item_no_str] = item_total_qty
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             st.markdown(f"**Total Quantity for Item {item_no_str} = `{item_total_qty:,.2f} {item['unit']}`**")
+
+    # 📥 Download Measurement Sheet Excel (With Formula)
+    meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
+    st.download_button(
+        label="📥 Download Measurement Sheet (Excel With Formulas)",
+        data=meas_excel_buffer,
+        file_name="Detail_Measurement_Sheet_Formulas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     st.divider()
 
@@ -594,6 +790,15 @@ def main():
     else:
         st.info("Labour စရိတ် မရှိပါ။")
     st.markdown(f"**Total Labour Cost = `{total_lab_cost:,.2f} MMK`**")
+
+    # 📥 Download BOQ Summary Excel Button (With Formulas)
+    boq_excel_buffer = export_boq_summary_excel(material_summary, labour_summary)
+    st.download_button(
+        label="📥 Download BOQ Material & Labour Summary (Excel With Formulas)",
+        data=boq_excel_buffer,
+        file_name="BOQ_Summary_Formulas.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     st.divider()
 
