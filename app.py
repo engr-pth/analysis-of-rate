@@ -67,8 +67,115 @@ def parse_excel_rates(file_path):
 
 
 # =========================================================
-# Excel Helper Functions (Formulas & Styling embedded)
+# Excel Import/Export Helper Functions
 # =========================================================
+
+def export_measurement_template():
+    """အသုံးပြုသူများ Measurement Upload လုပ်ရန် နမူနာ Excel Template ထုတ်ပေးခြင်း"""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Measurement Input Template"
+
+    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type"]
+    
+    header_fill = PatternFill(start_color="366092", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    # Sample Data Rows
+    sample_data = [
+        ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
+        ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
+        ["2", "Foundation Concrete Footing", 4, 6, 6, 1.5, 0, "Addition"],
+    ]
+
+    for row_idx, row_vals in enumerate(sample_data, start=2):
+        for col_idx, val in enumerate(row_vals, start=1):
+            ws.cell(row=row_idx, column=col_idx, value=val)
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+
+def process_uploaded_measurement_file(uploaded_file, selected_items_list):
+    """Upload တင်လိုက်သော Excel/CSV ဖိုင်မှ Measurement များကို Session State ထဲသို့ Process လုပ်၍ ထည့်သွင်းပေးခြင်း"""
+    try:
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
+
+        # Header များကို cleaning ပြုလုပ်ခြင်း
+        df.columns = df.columns.str.strip().str.lower()
+        
+        # Column အမည်များ ရှာဖွေခြင်း
+        col_item = next((c for c in df.columns if 'item' in c), None)
+        col_desc = next((c for c in df.columns if 'desc' in c or 'particular' in c), None)
+        col_no = next((c for c in df.columns if 'no' in c), None)
+        col_l = next((c for c in df.columns if 'l' in c or 'length' in c), None)
+        col_b = next((c for c in df.columns if 'b' in c or 'breadth' in c or 'width' in c), None)
+        col_h = next((c for c in df.columns if 'h' in c or 'height' in c or 'depth' in c), None)
+        col_ded = next((c for c in df.columns if 'ded' in c), None)
+        col_type = next((c for c in df.columns if 'type' in c or 'deduction' in c), None)
+
+        if not col_item or not col_desc:
+            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' နှင့် 'Particular Description' Column များ ပါဝင်ရပါမည်။")
+            return False
+
+        # Item သီးသန့်အလိုက် Data များကို Group ဖွဲ့ခြင်း
+        imported_count = 0
+        for idx, item in enumerate(selected_items_list):
+            item_no_str = str(item['item_no']).strip()
+            rows_state_key = f"rows_data_{item_no_str}_{idx}"
+
+            # ဖိုင်ထဲမှ သက်ဆိုင်ရာ Item No. ပါသော Row များကို စစ်ထုတ်ခြင်း
+            item_df = df[df[col_item].astype(str).str.strip() == item_no_str]
+
+            if not item_df.empty:
+                new_rows = []
+                for _, r in item_df.iterrows():
+                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Section"
+                    no_val = int(r[col_no]) if col_no and pd.notna(r[col_no]) else 1
+                    l_val = float(r[col_l]) if col_l and pd.notna(r[col_l]) else 0.0
+                    b_val = float(r[col_b]) if col_b and pd.notna(r[col_b]) else 0.0
+                    h_val = float(r[col_h]) if col_h and pd.notna(r[col_h]) else 0.0
+                    ded_val = float(r[col_ded]) if col_ded and pd.notna(r[col_ded]) else 0.0
+                    
+                    type_str = str(r[col_type]).lower() if col_type and pd.notna(r[col_type]) else ""
+                    is_ded_row = "ded" in type_str or "minus" in type_str or "sub" in type_str
+
+                    new_rows.append({
+                        "desc": desc_val,
+                        "no": max(1, no_val),
+                        "l": l_val,
+                        "b": b_val,
+                        "h": h_val,
+                        "ded": ded_val,
+                        "is_deduction_row": is_ded_row
+                    })
+
+                if new_rows:
+                    st.session_state[rows_state_key] = new_rows
+                    imported_count += len(new_rows)
+
+        st.success(f"✅ Excel/CSV ဖိုင်မှ Measurement Row ပေါင်း ({imported_count}) ခုကို အောင်မြင်စွာ တင်သွင်းပြီးပါပြီ။")
+        return True
+
+    except Exception as e:
+        st.error(f"❌ Excel Process လုပ်ရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
+        return False
+
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
     """Detail Measurement Sheet ကို Excel Formula များဖြင့် Export ထုတ်ပေးသည့် Function"""
@@ -76,14 +183,12 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
     ws = wb.active
     ws.title = "Measurement Sheet"
 
-    # Title Styling
     ws['A1'] = "DETAIL MEASUREMENT SHEET"
     ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
     
     headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
-    
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    header_font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="366092", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
     thin_border = Border(left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
                          top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9'))
 
@@ -98,12 +203,10 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
-        # Item Header Row
         ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['title']} ({item['unit']})").font = Font(bold=True, size=11)
         ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=9)
         row_idx += 1
 
-        # Table Header
         for col_idx, text in enumerate(headers, 1):
             cell = ws.cell(row=row_idx, column=col_idx, value=text)
             cell.fill = header_fill
@@ -118,7 +221,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
             ws.cell(row=row_idx, column=2, value="Lumpsum Job")
             ws.cell(row=row_idx, column=3, value=1)
             ws.cell(row=row_idx, column=8, value="Add")
-            # Formula: Subtotal = No
             ws.cell(row=row_idx, column=9, value=f"=C{row_idx}")
             row_idx += 1
         else:
@@ -133,7 +235,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
                 ws.cell(row=row_idx, column=7, value=r['ded'])
                 ws.cell(row=row_idx, column=8, value="Deduction" if r.get("is_deduction_row") else "Addition")
 
-                # Formula for Sub-total calculation in Excel
                 if is_rft:
                     mult_expr = f"C{row_idx}*D{row_idx}"
                 elif is_sft:
@@ -143,7 +244,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
                 else:
                     mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}*F{row_idx}"
 
-                # Formula with IF condition for Deduction / Addition
                 formula_str = f"=IF(H{row_idx}=\"Deduction\", -1 * MAX(0, ({mult_expr}) - G{row_idx}), MAX(0, ({mult_expr}) - G{row_idx}))"
                 ws.cell(row=row_idx, column=9, value=formula_str)
 
@@ -154,13 +254,11 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
 
         end_data_row = row_idx - 1
 
-        # Total Row with =SUM() Formula
         ws.cell(row=row_idx, column=2, value=f"Total Quantity ({item['unit']})").font = Font(bold=True)
         ws.cell(row=row_idx, column=9, value=f"=MAX(0, SUM(I{start_data_row}:I{end_data_row}))").font = Font(bold=True)
-        ws.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+        ws.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFF2CC", fill_type="solid")
         row_idx += 2
 
-    # Column Width adjustment
     for col in ws.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
         col_letter = get_column_letter(col[0].column)
@@ -176,12 +274,9 @@ def export_boq_summary_excel(material_summary, labour_summary):
     """BOQ Material & Labour Summary ကို Excel Formula ပါဝင်အောင် Export ထုတ်ပေးသည့် Function"""
     wb = openpyxl.Workbook()
     
-    # ----------------------------------------
-    # 1. Material Breakdown Sheet
-    # ----------------------------------------
+    # Material Summary Sheet
     ws_mat = wb.active
     ws_mat.title = "Material Summary"
-
     ws_mat['A1'] = "MATERIAL COST BREAKDOWN (BOQ)"
     ws_mat['A1'].font = Font(size=14, bold=True, color='1F497D')
 
@@ -201,20 +296,16 @@ def export_boq_summary_excel(material_summary, labour_summary):
         ws_mat.cell(row=r_idx, column=3, value=data['unit'])
         ws_mat.cell(row=r_idx, column=4, value=data['qty'])
         ws_mat.cell(row=r_idx, column=5, value=data['rate'])
-        # Dynamic Formula: Amount = Qty * Rate
         ws_mat.cell(row=r_idx, column=6, value=f"=D{r_idx}*E{r_idx}")
         ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
         r_idx += 1
 
-    # Total Material Cost Formula =SUM()
     ws_mat.cell(row=r_idx, column=2, value="TOTAL MATERIAL COST").font = Font(bold=True)
     ws_mat.cell(row=r_idx, column=6, value=f"=SUM(F4:F{r_idx-1})").font = Font(bold=True)
     ws_mat.cell(row=r_idx, column=6).fill = PatternFill(start_color="D9E1F2", fill_type="solid")
     ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
 
-    # ----------------------------------------
-    # 2. Labour Breakdown Sheet
-    # ----------------------------------------
+    # Labour Summary Sheet
     ws_lab = wb.create_sheet(title="Labour Summary")
     ws_lab['A1'] = "LABOUR COST BREAKDOWN (BOQ)"
     ws_lab['A1'].font = Font(size=14, bold=True, color='1F497D')
@@ -231,18 +322,15 @@ def export_boq_summary_excel(material_summary, labour_summary):
         ws_lab.cell(row=r_idx, column=3, value=data['unit'])
         ws_lab.cell(row=r_idx, column=4, value=data['qty'])
         ws_lab.cell(row=r_idx, column=5, value=data['rate'])
-        # Dynamic Formula: Amount = Qty * Rate
         ws_lab.cell(row=r_idx, column=6, value=f"=D{r_idx}*E{r_idx}")
         ws_lab.cell(row=r_idx, column=6).number_format = '#,##0.00'
         r_idx += 1
 
-    # Total Labour Cost Formula =SUM()
     ws_lab.cell(row=r_idx, column=2, value="TOTAL LABOUR COST").font = Font(bold=True)
     ws_lab.cell(row=r_idx, column=6, value=f"=SUM(F4:F{r_idx-1})").font = Font(bold=True)
     ws_lab.cell(row=r_idx, column=6).fill = PatternFill(start_color="D9E1F2", fill_type="solid")
     ws_lab.cell(row=r_idx, column=6).number_format = '#,##0.00'
 
-    # Auto Column Adjustments
     for ws in [ws_mat, ws_lab]:
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
@@ -272,10 +360,28 @@ def main():
     iron_items = parse_excel_rates(iron_path)
 
     # ==========================================
-    # Sidebar Tools: Master Rates, Calculator & Converter
+    # Sidebar Tools: Upload Data, Master Rates & Calc
     # ==========================================
     st.sidebar.title("🛠️ Tools & Settings")
-    tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["⚙️ Master Rates", "🧮 Calc", "🔄 Converter"])
+    tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Upload Excel", "⚙️ Rates", "🧮 Calc", "🔄 Converter"])
+
+    # 📥 Sidebar Tab 1: Upload Excel/CSV Data
+    with tab_upload:
+        st.header("📥 Upload Measurement Excel")
+        st.write("အသင့်ပြင်ထားသော Measurement Excel ဖိုင်ကို တင်၍ Data အလိုအလျောက် ဖြည့်သွင်းနိုင်ပါသည်။")
+
+        # Download Sample Template Button
+        template_buffer = export_measurement_template()
+        st.download_button(
+            label="📄 Download Input Template Excel",
+            data=template_buffer,
+            file_name="Measurement_Input_Template.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        st.divider()
+
+        uploaded_meas_file = st.file_uploader("Excel သို့မဟုတ် CSV ဖိုင် တင်ရန်:", type=["xlsx", "xls", "csv"])
 
     with tab_rates:
         st.header("Master Unit Rates (MMK)")
@@ -435,6 +541,12 @@ def main():
     if not selected_items_list:
         st.info("👉 တွက်ချက်လိုသော Item များကို အထက်တွင် ရွေးချယ်ပေးပါ။")
         return
+
+    # Upload ဖိုင်ရှိပါက Process လုပ်ရန် Button
+    if uploaded_meas_file is not None:
+        if st.sidebar.button("⚙️ Apply Uploaded Excel Data"):
+            process_uploaded_measurement_file(uploaded_meas_file, selected_items_list)
+            st.rerun()
 
     st.divider()
 
