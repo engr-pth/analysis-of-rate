@@ -177,17 +177,14 @@ def parse_excel_rates(file_path):
 
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Excel/CSV ဖိုင်မှ Item များ၊ Particular Name နှင့် L, B, H, Deduction Measurement တန်ဖိုးများကို 
-    အတိအကျ ဖတ်ရှုပြီး Auto-Select & Import လုပ်ပေးသည့် Function
+    Category ကိုပါ တိကျစွာ တိုက်စစ်၍ မသက်ဆိုင်သော Work Category မှ Item များ Auto-Select မဝင်အောင် ပြင်ထားသော Function
     """
     try:
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
-            # First, check raw dataframe without header to locate the REAL table header row
             df_raw = pd.read_excel(uploaded_file, header=None)
             
-            # Find row index containing BOTH 'particular'/'description' and 'item'/'no'
             header_row_idx = None
             for idx, row in df_raw.iterrows():
                 row_vals = row.dropna().astype(str).str.lower().tolist()
@@ -200,10 +197,8 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             else:
                 df = pd.read_excel(uploaded_file)
 
-        # Clean column names
         df.columns = [str(c).strip().lower() for c in df.columns]
         
-        # Robust Column Matching
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'particular' in c or 'desc' in c), None)
         col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
@@ -217,37 +212,61 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။")
             return
 
-        # Filter valid data rows (remove headers, section titles, total rows)
         valid_rows = df[df[col_item].notna() & (df[col_item].astype(str).str.strip() != '')].copy()
-        
-        # Clean item_no values
         valid_rows['clean_item_no'] = valid_rows[col_item].astype(str).str.strip()
         
-        # Exclude non-data rows
+        # Header / Section Title များကို ဖယ်ထုတ်ခြင်း
         valid_rows = valid_rows[
             ~valid_rows['clean_item_no'].str.lower().str.contains('item no|total|detail|description') &
             valid_rows[col_desc].notna() &
             (valid_rows[col_desc].astype(str).str.strip() != '')
         ]
 
-        # Excel ဖိုင်ထဲတွင် ပါဝင်သော Item No များ
         excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
 
         if not excel_item_nos:
             st.warning("⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။")
             return
 
-        # Multiselect State များကို Auto-Select လုပ်ပေးခြင်း
-        st.session_state['selected_ew'] = [k for k, v in all_item_maps['ew'].items() if str(v['item_no']).strip() in excel_item_nos]
-        st.session_state['selected_cc'] = [k for k, v in all_item_maps['cc'].items() if str(v['item_no']).strip() in excel_item_nos]
-        st.session_state['selected_ir'] = [k for k, v in all_item_maps['ir'].items() if str(v['item_no']).strip() in excel_item_nos]
+        # --- SMART CATEGORY MATCHING LOGIC ---
+        # Excel ဖိုင်၏ Full Text တစ်ခုလုံးကို ယူ၍ Category ရှာဖွေခြင်း (e.g. Earth work, Concrete work, Steel)
+        full_text = df_raw.astype(str).values.flatten()
+        full_text_str = " ".join(full_text).lower()
 
-        # Flat Item List ပြုလုပ်ခြင်း
+        # Category mapping checks
+        selected_ew, selected_cc, selected_ir = [], [], []
+
+        for k, v in all_item_maps['ew'].items():
+            item_no_str = str(v['item_no']).strip()
+            if item_no_str in excel_item_nos:
+                # Earthwork တွင် သေချာပါဝင်ပါက Select လုပ်မည်
+                selected_ew.append(k)
+
+        for k, v in all_item_maps['cc'].items():
+            item_no_str = str(v['item_no']).strip()
+            title_keywords = v['title'].lower().split()[:3] # Item title ၏ ပထမ စကားလုံးအချို့
+            # Concrete Work Keyword ပါဝင်မှသာ သို့မဟုတ် Title ကိုက်ညီမှသာ Select လုပ်မည်
+            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['concrete', 'cement', 'cc ']) and any(kw in full_text_str for kw in title_keywords):
+                selected_cc.append(k)
+
+        for k, v in all_item_maps['ir'].items():
+            item_no_str = str(v['item_no']).strip()
+            title_keywords = v['title'].lower().split()[:3]
+            # Iron Work Keyword ပါဝင်မှသာ Select လုပ်မည်
+            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['iron', 'steel', 'rebar', 'w.i']) and any(kw in full_text_str for kw in title_keywords):
+                selected_ir.append(k)
+
+        # Update Session States
+        st.session_state['selected_ew'] = selected_ew
+        st.session_state['selected_cc'] = selected_cc
+        st.session_state['selected_ir'] = selected_ir
+
+        # Row Data များ Auto-Import ပြုလုပ်ခြင်း
+        all_selected_keys = selected_ew + selected_cc + selected_ir
         all_items_flat = []
-        for category in ['ew', 'cc', 'ir']:
-            for key, item in all_item_maps[category].items():
-                item_no_str = str(item['item_no']).strip()
-                if item_no_str in excel_item_nos:
+        for cat in ['ew', 'cc', 'ir']:
+            for k, item in all_item_maps[cat].items():
+                if k in all_selected_keys:
                     all_items_flat.append(item)
 
         imported_rows_count = 0
@@ -260,16 +279,13 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             if not item_df.empty:
                 new_rows = []
                 for _, r in item_df.iterrows():
-                    # Particular Description
                     desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Section"
                     
-                    # No / Quantity Count
                     try:
                         no_val = int(float(r[col_no])) if col_no and pd.notna(r[col_no]) else 1
                     except (ValueError, TypeError):
                         no_val = 1
 
-                    # Safe Numeric Conversion for L, B, H, Ded
                     def safe_float(val):
                         try:
                             if pd.isna(val) or str(val).strip() in ['-', '', 'nan', 'NaN']:
@@ -283,7 +299,6 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     h_val = safe_float(r[col_h]) if col_h else 0.0
                     ded_val = safe_float(r[col_ded]) if col_ded else 0.0
                     
-                    # Deduction Row Check
                     type_str = str(r[col_type]).lower() if col_type and pd.notna(r[col_type]) else ""
                     is_ded_row = "ded" in type_str or "minus" in type_str or "sub" in type_str or ded_val > 0
 
