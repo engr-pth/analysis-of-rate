@@ -178,9 +178,8 @@ def parse_excel_rates(file_path):
 
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Excel/CSV ဖတ်ရှုခြင်းနှင့် Error မပျောက်သွားအောင် Session State ဖြင့် ထိန်းပေးထားသော Function
+    Excel/CSV ဖတ်ရှုခြင်းနှင့် TypeError မတက်အောင် လုံခြုံစွာ ပြင်ဆင်ထားသော Function
     """
-    # ယခင် Error သို့မဟုတ် Log အဟောင်းများကို ရှင်းထုတ်ခြင်း
     st.session_state['last_excel_error'] = None
 
     try:
@@ -193,14 +192,13 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
 
         file_name = getattr(uploaded_file, 'name', '').lower()
 
-        # Engine လွတ်လပ်စွာ ဖတ်နိုင်ရန် Try-Except Wrapping
+        # Excel / CSV ဖတ်ရှုခြင်း
         try:
             if file_name.endswith('.csv'):
                 df_raw = pd.read_csv(uploaded_file, header=None)
             else:
                 df_raw = pd.read_excel(uploaded_file, header=None)
-        except Exception as read_err:
-            # openpyxl engine မရှိပါက သို့မဟုတ် Excel format ကြောင့်ဖြစ်လျှင် fallback ပြန်လုပ်ခြင်း
+        except Exception:
             if hasattr(uploaded_file, 'seek'):
                 uploaded_file.seek(0)
             if file_name.endswith('.csv'):
@@ -269,7 +267,8 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
-        full_text_str = " ".join(df_raw.astype(str).values.flatten()).lower()
+        # 💡 [FIX HERE] Element တိုင်းကို str() သေချာပြောင်းပေး၍ TypeError ကို ဖြေရှင်းထားသည်
+        full_text_str = " ".join([str(x) for x in df_raw.values.flatten() if pd.notna(x)]).lower()
 
         selected_ew, selected_cc, selected_ir = [], [], []
 
@@ -355,7 +354,6 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         st.session_state['excel_import_success'] = f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို အောင်မြင်စွာ Auto-Import ပြုလုပ်ပြီးပါပြီ။"
 
     except Exception as e:
-        # Error အပြည့်အစုံကို Session State ထဲ သိမ်းထားမည်
         err_msg = traceback.format_exc()
         st.session_state['last_excel_error'] = f"❌ Exception: {e}\n\n{err_msg}"
 
