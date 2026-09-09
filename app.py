@@ -1,5 +1,6 @@
 import os
 import io
+import traceback
 import pandas as pd
 import streamlit as st
 import openpyxl
