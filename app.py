@@ -67,7 +67,7 @@ def parse_excel_rates(file_path):
 
 
 # =========================================================
-# Excel Import/Export Helper Functions
+# Excel Helper Functions
 # =========================================================
 
 def export_measurement_template():
@@ -86,7 +86,6 @@ def export_measurement_template():
         cell.fill = header_fill
         cell.font = header_font
 
-    # Sample Data Rows
     sample_data = [
         ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
         ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
@@ -108,18 +107,19 @@ def export_measurement_template():
     return buffer
 
 
-def process_uploaded_measurement_file(uploaded_file, selected_items_list):
-    """Upload တင်လိုက်သော Excel/CSV ဖိုင်မှ Measurement များကို Session State ထဲသို့ Process လုပ်၍ ထည့်သွင်းပေးခြင်း"""
+def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
+    """
+    Excel/CSV ဖိုင် တင်လိုက်သည်နှင့် Item No များကို ရှာဖွေပြီး 
+    Multiselect Widgets များတွင် Auto-Select ပေးခြင်းနှင့် Data ဖြည့်သွင်းပေးခြင်း
+    """
     try:
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
 
-        # Header များကို cleaning ပြုလုပ်ခြင်း
         df.columns = df.columns.str.strip().str.lower()
         
-        # Column အမည်များ ရှာဖွေခြင်း
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'desc' in c or 'particular' in c), None)
         col_no = next((c for c in df.columns if 'no' in c), None)
@@ -129,23 +129,37 @@ def process_uploaded_measurement_file(uploaded_file, selected_items_list):
         col_ded = next((c for c in df.columns if 'ded' in c), None)
         col_type = next((c for c in df.columns if 'type' in c or 'deduction' in c), None)
 
-        if not col_item or not col_desc:
-            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' နှင့် 'Particular Description' Column များ ပါဝင်ရပါမည်။")
-            return False
+        if not col_item:
+            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' Column မပါဝင်ပါ။")
+            return
 
-        # Item သီးသန့်အလိုက် Data များကို Group ဖွဲ့ခြင်း
-        imported_count = 0
-        for idx, item in enumerate(selected_items_list):
+        # Excel ဖိုင်ထဲတွင် ပါဝင်သော Item No များ
+        excel_item_nos = df[col_item].astype(str).str.strip().unique().tolist()
+
+        # Multiselect State များကို Auto-Select လုပ်ပေးရန် ပြင်ဆင်ခြင်း
+        st.session_state['selected_ew'] = [k for k, v in all_item_maps['ew'].items() if str(v['item_no']).strip() in excel_item_nos]
+        st.session_state['selected_cc'] = [k for k, v in all_item_maps['cc'].items() if str(v['item_no']).strip() in excel_item_nos]
+        st.session_state['selected_ir'] = [k for k, v in all_item_maps['ir'].items() if str(v['item_no']).strip() in excel_item_nos]
+
+        # တောက်လျှောက် Session State Measurement Row Data များဖြည့်သွင်းခြင်း
+        all_items_flat = []
+        for category in ['ew', 'cc', 'ir']:
+            for key, item in all_item_maps[category].items():
+                item_no_str = str(item['item_no']).strip()
+                if item_no_str in excel_item_nos:
+                    all_items_flat.append(item)
+
+        imported_rows_count = 0
+        for idx, item in enumerate(all_items_flat):
             item_no_str = str(item['item_no']).strip()
             rows_state_key = f"rows_data_{item_no_str}_{idx}"
 
-            # ဖိုင်ထဲမှ သက်ဆိုင်ရာ Item No. ပါသော Row များကို စစ်ထုတ်ခြင်း
             item_df = df[df[col_item].astype(str).str.strip() == item_no_str]
 
             if not item_df.empty:
                 new_rows = []
                 for _, r in item_df.iterrows():
-                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Section"
+                    desc_val = str(r[col_desc]).strip() if col_desc and pd.notna(r[col_desc]) else "Section"
                     no_val = int(r[col_no]) if col_no and pd.notna(r[col_no]) else 1
                     l_val = float(r[col_l]) if col_l and pd.notna(r[col_l]) else 0.0
                     b_val = float(r[col_b]) if col_b and pd.notna(r[col_b]) else 0.0
@@ -167,14 +181,12 @@ def process_uploaded_measurement_file(uploaded_file, selected_items_list):
 
                 if new_rows:
                     st.session_state[rows_state_key] = new_rows
-                    imported_count += len(new_rows)
+                    imported_rows_count += len(new_rows)
 
-        st.success(f"✅ Excel/CSV ဖိုင်မှ Measurement Row ပေါင်း ({imported_count}) ခုကို အောင်မြင်စွာ တင်သွင်းပြီးပါပြီ။")
-        return True
+        st.success(f"✅ Excel မှ Item များနှင့် Measurement ({imported_rows_count}) ခုကို Auto-Select ပြုလုပ်ပြီးပါပြီ။")
 
     except Exception as e:
-        st.error(f"❌ Excel Process လုပ်ရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
-        return False
+        st.error(f"❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
 
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
@@ -274,7 +286,6 @@ def export_boq_summary_excel(material_summary, labour_summary):
     """BOQ Material & Labour Summary ကို Excel Formula ပါဝင်အောင် Export ထုတ်ပေးသည့် Function"""
     wb = openpyxl.Workbook()
     
-    # Material Summary Sheet
     ws_mat = wb.active
     ws_mat.title = "Material Summary"
     ws_mat['A1'] = "MATERIAL COST BREAKDOWN (BOQ)"
@@ -305,7 +316,6 @@ def export_boq_summary_excel(material_summary, labour_summary):
     ws_mat.cell(row=r_idx, column=6).fill = PatternFill(start_color="D9E1F2", fill_type="solid")
     ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
 
-    # Labour Summary Sheet
     ws_lab = wb.create_sheet(title="Labour Summary")
     ws_lab['A1'] = "LABOUR COST BREAKDOWN (BOQ)"
     ws_lab['A1'].font = Font(size=14, bold=True, color='1F497D')
@@ -350,7 +360,7 @@ def main():
 
     st.title("🏗️ Estimation, QS & Rate Analysis System")
 
-    # Load Data
+    # Load Rate Master Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     concrete_path = os.path.join(BASE_DIR, "2 Concrete ( Hand mixed ).xls")
     iron_path = os.path.join(BASE_DIR, "3 Iron and Steel work.xls")
@@ -359,18 +369,30 @@ def main():
     concrete_items = parse_excel_rates(concrete_path)
     iron_items = parse_excel_rates(iron_path)
 
+    ew_options = {f"[Earth] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
+    cc_options = {f"[Concrete] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
+    ir_options = {f"[Iron] Item {i['item_no']} - {i['title']}": i for i in iron_items}
+
+    all_item_maps = {'ew': ew_options, 'cc': cc_options, 'ir': ir_options}
+
+    # Session State များ Initialise ပြုလုပ်ခြင်း
+    if 'selected_ew' not in st.session_state:
+        st.session_state['selected_ew'] = []
+    if 'selected_cc' not in st.session_state:
+        st.session_state['selected_cc'] = []
+    if 'selected_ir' not in st.session_state:
+        st.session_state['selected_ir'] = []
+
     # ==========================================
     # Sidebar Tools: Upload Data, Master Rates & Calc
     # ==========================================
     st.sidebar.title("🛠️ Tools & Settings")
     tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Upload Excel", "⚙️ Rates", "🧮 Calc", "🔄 Converter"])
 
-    # 📥 Sidebar Tab 1: Upload Excel/CSV Data
     with tab_upload:
         st.header("📥 Upload Measurement Excel")
-        st.write("အသင့်ပြင်ထားသော Measurement Excel ဖိုင်ကို တင်၍ Data အလိုအလျောက် ဖြည့်သွင်းနိုင်ပါသည်။")
+        st.write("အသင့်ပြင်ထားသော Excel တင်လိုက်ပါက Item များနှင့် Measurement များ Auto-Select ဖြစ်သွားပါမည်။")
 
-        # Download Sample Template Button
         template_buffer = export_measurement_template()
         st.download_button(
             label="📄 Download Input Template Excel",
@@ -382,6 +404,12 @@ def main():
         st.divider()
 
         uploaded_meas_file = st.file_uploader("Excel သို့မဟုတ် CSV ဖိုင် တင်ရန်:", type=["xlsx", "xls", "csv"])
+
+        # Excel ဖိုင်တင်လိုက်ပါက Auto Select & Process လုပ်ဆောင်ရန် Button
+        if uploaded_meas_file is not None:
+            if st.button("🚀 Auto-Select & Import Items", type="primary"):
+                parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
+                st.rerun()
 
     with tab_rates:
         st.header("Master Unit Rates (MMK)")
@@ -416,7 +444,6 @@ def main():
         rate_carriage = st.number_input("Carriage to site (per cwt)", value=5000.0)
         rate_hoisting = st.number_input("Hoisting and fixing (per cwt)", value=15000.0)
 
-    # 🧮 Sidebar Quick Calculator
     with tab_calc:
         st.subheader("🧮 Quick Calculator")
         calc_expr = st.text_input("Expression ရိုက်ပါ (e.g. 10*12.5 + 5):", value="")
@@ -431,7 +458,6 @@ def main():
             except Exception as e:
                 st.error("တွက်ချက်မှု မမှန်ကန်ပါ။")
 
-    # 🔄 Sidebar Unit Converter
     with tab_conv:
         st.subheader("🔄 Unit Converter")
         conv_type = st.selectbox("Convert Type:", [
@@ -521,32 +547,23 @@ def main():
     selected_items_list = []
 
     if show_earthwork and earthwork_items:
-        ew_options = {f"[Earth] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
-        ew_selected = st.multiselect("🚜 Earth Work မှ တွက်မည်များ ရွေးရန်:", list(ew_options.keys()))
+        ew_selected = st.multiselect("🚜 Earth Work မှ တွက်မည်များ ရွေးရန်:", list(ew_options.keys()), key="selected_ew")
         for key in ew_selected:
             selected_items_list.append(ew_options[key])
 
     if show_concrete and concrete_items:
-        cc_options = {f"[Concrete] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
-        cc_selected = st.multiselect("🧱 Concrete Work မှ တွက်မည်များ ရွေးရန်:", list(cc_options.keys()))
+        cc_selected = st.multiselect("🧱 Concrete Work မှ တွက်မည်များ ရွေးရန်:", list(cc_options.keys()), key="selected_cc")
         for key in cc_selected:
             selected_items_list.append(cc_options[key])
 
     if show_iron and iron_items:
-        ir_options = {f"[Iron] Item {i['item_no']} - {i['title']}": i for i in iron_items}
-        ir_selected = st.multiselect("⚙️ Iron & Steel Work မှ တွက်မည်များ ရွေးရန်:", list(ir_options.keys()))
+        ir_selected = st.multiselect("⚙️ Iron & Steel Work မှ တွက်မည်များ ရွေးရန်:", list(ir_options.keys()), key="selected_ir")
         for key in ir_selected:
             selected_items_list.append(ir_options[key])
 
     if not selected_items_list:
-        st.info("👉 တွက်ချက်လိုသော Item များကို အထက်တွင် ရွေးချယ်ပေးပါ။")
+        st.info("👉 တွက်ချက်လိုသော Item များကို အထက်တွင် ရွေးချယ်ပေးပါ သို့မဟုတ် Excel ဖိုင် တင်ပြီး '🚀 Auto-Select & Import Items' ကို နှိပ်ပါ။")
         return
-
-    # Upload ဖိုင်ရှိပါက Process လုပ်ရန် Button
-    if uploaded_meas_file is not None:
-        if st.sidebar.button("⚙️ Apply Uploaded Excel Data"):
-            process_uploaded_measurement_file(uploaded_meas_file, selected_items_list)
-            st.rerun()
 
     st.divider()
 
