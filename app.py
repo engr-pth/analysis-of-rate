@@ -523,6 +523,14 @@ def export_boq_summary_excel(material_summary, labour_summary):
     buffer.seek(0)
     return buffer
 
+# Excel Import Error သို့မဟုတ် Success Message ကို Re-run ဖြစ်သော်လည်း မပျောက်ဘဲ ပြသပေးခြင်း
+if st.session_state.get('last_excel_error'):
+    st.error("❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်:")
+    st.code(st.session_state['last_excel_error'], language="python")
+
+if st.session_state.get('excel_import_success'):
+    st.success(st.session_state['excel_import_success'])
+
 
 def main():
     st.set_page_config(
