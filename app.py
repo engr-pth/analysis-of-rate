@@ -254,29 +254,39 @@ def main():
     ls_custom_rates = {}
 
     for idx, item in enumerate(selected_items_list):
-        item_key = f"item_row_count_{item['item_no']}_{idx}"
-        if item_key not in st.session_state:
-            st.session_state[item_key] = 1
+        item_no_str = str(item['item_no'])
+        rows_state_key = f"rows_data_{item_no_str}_{idx}"
+
+        unit_str = str(item['unit']).lower().strip()
+        is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+        is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
+        is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
+
+        # Session State List မရှိသေးပါက Default အစပြုပေးခြင်း
+        if rows_state_key not in st.session_state:
+            st.session_state[rows_state_key] = [
+                {
+                    "desc": "Section 1",
+                    "no": 1,
+                    "l": 50.0 if is_sft else 10.0,
+                    "b": 50.0 if is_sft else 10.0,
+                    "h": 5.0,
+                    "ded": 0.0
+                }
+            ]
 
         with st.expander(f"📌 {idx+1}. Item {item['item_no']} - {item['title']} ({item['unit']})", expanded=True):
-            unit_str = str(item['unit']).lower().strip()
-            num_rows = st.session_state[item_key]
-
-            is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
-            is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
-            is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
-
             meas_rows = []
             item_total_qty = 0.0
 
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
-                p_desc = c_desc.text_input("Particular Name", value="Lumpsum Job", key=f"desc_{idx}_{item['item_no']}")
-                no_val = c_no.number_input("Job / Qty", min_value=1, value=1, key=f"no_{idx}_{item['item_no']}")
-                ls_rate = c_rate.number_input("Lump Sum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item['item_no']}")
+                p_desc = c_desc.text_input("Particular Name", value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
+                no_val = c_no.number_input("Job / Qty", min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
+                ls_rate = c_rate.number_input("Lump Sum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
                 
                 item_total_qty = float(no_val)
-                ls_custom_rates[item['item_no']] = ls_rate
+                ls_custom_rates[item_no_str] = ls_rate
 
                 meas_rows.append({
                     "Particular": p_desc,
@@ -288,31 +298,47 @@ def main():
                     "Sub-total": no_val
                 })
             else:
-                for r_idx in range(num_rows):
+                current_rows = st.session_state[rows_state_key]
+                row_to_copy = None
+
+                for r_idx, r_data in enumerate(current_rows):
                     if is_sft:
-                        c_desc, c_no, c_l, c_b, c_ded = st.columns([2, 1, 1, 1, 1])
+                        c_desc, c_no, c_l, c_b, c_ded, c_cp = st.columns([2.5, 1, 1, 1, 1, 1])
                     elif is_rft:
-                        c_desc, c_no, c_l, c_ded = st.columns([3, 1, 1, 1])
+                        c_desc, c_no, c_l, c_ded, c_cp = st.columns([3, 1, 1, 1, 1])
                     else:
-                        c_desc, c_no, c_l, c_b, c_h, c_ded = st.columns([2, 1, 1, 1, 1, 1])
+                        c_desc, c_no, c_l, c_b, c_h, c_ded, c_cp = st.columns([2, 1, 1, 1, 1, 1, 1])
 
                     p_desc = c_desc.text_input(
                         "Particular Name",
-                        value=f"Section {r_idx+1}",
-                        key=f"desc_{idx}_{r_idx}_{item['item_no']}"
+                        value=r_data["desc"],
+                        key=f"desc_{idx}_{r_idx}_{item_no_str}"
                     )
-                    no_val = c_no.number_input("No", min_value=1, value=1, key=f"no_{idx}_{r_idx}_{item['item_no']}")
-                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=50.0 if is_sft else 10.0, key=f"l_{idx}_{r_idx}_{item['item_no']}")
+                    no_val = c_no.number_input("No", min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
+                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
                     
                     b_val = 0.0
                     if not is_rft:
-                        b_val = c_b.number_input("B (ft)", min_value=0.0, value=50.0 if is_sft else 10.0, key=f"b_{idx}_{r_idx}_{item['item_no']}")
+                        b_val = c_b.number_input("B (ft)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
                     
                     h_val = 0.0
                     if not is_sft and not is_rft:
-                        h_val = c_h.number_input("H (ft)", min_value=0.0, value=5.0, key=f"h_{idx}_{r_idx}_{item['item_no']}")
+                        h_val = c_h.number_input("H (ft)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
                     
-                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=0.0, key=f"ded_{idx}_{r_idx}_{item['item_no']}")
+                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data["ded"]), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+
+                    # State update
+                    r_data["desc"] = p_desc
+                    r_data["no"] = no_val
+                    r_data["l"] = l_val
+                    r_data["b"] = b_val
+                    r_data["h"] = h_val
+                    r_data["ded"] = ded_val
+
+                    # Copy Button per Row
+                    st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
+                    if c_cp.button("📋 Copy Row", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
+                        row_to_copy = dict(r_data)
 
                     if is_rft:
                         gross_qty = no_val * l_val
@@ -336,18 +362,32 @@ def main():
                         "Sub-total": round(sub_total, 2)
                     })
 
+                # Copy Button နှိပ်ခဲ့ပါက Row အသစ်အဖြစ် ထည့်ပေးခြင်း
+                if row_to_copy is not None:
+                    copied_row = dict(row_to_copy)
+                    copied_row["desc"] = f"{copied_row['desc']} (Copy)"
+                    st.session_state[rows_state_key].append(copied_row)
+                    st.rerun()
+
                 col_add, col_rem, col_blank = st.columns([1, 1, 4])
-                if col_add.button("➕ Add Particular Row", key=f"add_{idx}_{item['item_no']}"):
-                    st.session_state[item_key] += 1
+                if col_add.button("➕ Add Particular Row", key=f"add_{idx}_{item_no_str}"):
+                    st.session_state[rows_state_key].append({
+                        "desc": f"Section {len(st.session_state[rows_state_key]) + 1}",
+                        "no": 1,
+                        "l": 50.0 if is_sft else 10.0,
+                        "b": 50.0 if is_sft else 10.0,
+                        "h": 5.0,
+                        "ded": 0.0
+                    })
                     st.rerun()
 
-                if num_rows > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item['item_no']}"):
-                    st.session_state[item_key] -= 1
+                if len(st.session_state[rows_state_key]) > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item_no_str}"):
+                    st.session_state[rows_state_key].pop()
                     st.rerun()
 
-            item_quantities[item['item_no']] = item_total_qty
+            item_quantities[item_no_str] = item_total_qty
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
-            st.markdown(f"**Total Quantity for Item {item['item_no']} = `{item_total_qty:,.2f} {item['unit']}`**")
+            st.markdown(f"**Total Quantity for Item {item_no_str} = `{item_total_qty:,.2f} {item['unit']}`**")
 
     st.divider()
 
@@ -361,7 +401,7 @@ def main():
     labour_summary = {}
 
     for idx, item in enumerate(selected_items_list):
-        item_no = item['item_no']
+        item_no = str(item['item_no'])
         measured_qty = item_quantities.get(item_no, 0.0)
 
         st.markdown(f"#### Item {item_no} - {item['title']}")
