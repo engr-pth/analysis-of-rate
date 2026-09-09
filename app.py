@@ -88,10 +88,10 @@ def main():
         st.header("Master Unit Rates (MMK)")
         
         st.subheader("👷 Labour Rates")
-        rate_worker = st.number_input("Worker", value=15000.0)
-        rate_digger = st.number_input("Digger", value=18000.0)
+        rate_worker = st.number_input("Worker", value=25000.0)
+        rate_digger = st.number_input("Digger", value=25000.0)
         rate_mason = st.number_input("Mason", value=25000.0)
-        rate_carpenter = st.number_input("Carpenter", value=25000.0)
+        rate_carpenter = st.number_input("Carpenter", value=35000.0)
         rate_maistry = st.number_input("Maistry", value=30000.0)
         rate_blacksmith = st.number_input("Blacksmith / Steel Worker", value=28000.0)
         rate_welder = st.number_input("Welder", value=30000.0)
@@ -107,7 +107,7 @@ def main():
         rate_ironite = st.number_input("Ironite", value=4000.0)
         rate_timber_scantling = st.number_input("Timber scantling", value=35000.0)
         rate_timber_planks = st.number_input("Timber planks", value=1200.0)
-        rate_nails = st.number_input("Nails and spikes", value=4500.0)
+        rate_nails = st.number_input("Nails and spikes / Wire Nails", value=3360.0)
 
         st.subheader("⚙️ Iron & Structural Rates")
         rate_steel_bar = st.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
@@ -200,6 +200,7 @@ def main():
         "Timber scantling": rate_timber_scantling,
         "Tinber planks 1\"": rate_timber_planks,
         "Nails and spikes": rate_nails,
+        "Wire Nails": rate_nails,
         "M.S. Bar": rate_steel_bar,
         "Reinforcement Steel": rate_steel_bar,
         "Binding Wire": rate_binding_wire,
@@ -347,7 +348,7 @@ def main():
     st.divider()
 
     # ==========================================
-    # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate
+    # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate (Builder's Estimate Format)
     # ==========================================
     st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Estimate")
 
@@ -359,26 +360,39 @@ def main():
         item_no = item['item_no']
         measured_qty = item_quantities.get(item_no, 0.0)
 
-        st.markdown(f"#### 🔹 {idx+1}. Item {item_no} - {item['title']} ({measured_qty:,.2f} {item['unit']})")
+        st.markdown(f"#### Item {item_no} - {item['title']}")
 
         unit_str = str(item['unit']).lower().strip()
         is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
 
-        # 📌 Lump Sum Breakdown မရှိသော်လည်း Direct Calculation လုပ်ပေးခြင်း
+        display_rows = []
+        item_total_cost = 0.0
+
+        # Item Header Row
+        display_rows.append({
+            "Item": item_no,
+            "Particular": item['title'],
+            "Unit": item['unit'],
+            "Quantity": f"{measured_qty:,.2f}",
+            "Rate (MMK)": "",
+            "Per": "",
+            "Amount (MMK)": ""
+        })
+
         if is_lumpsum and not item['breakdown']:
             ls_rate = ls_custom_rates.get(item_no, 0.0)
             amount = measured_qty * ls_rate
+            item_total_cost = amount
 
-            calc_rows = [{
-                "Particular": item['title'],
+            display_rows.append({
+                "Item": "",
+                "Particular": f"  └ {item['title']}",
                 "Unit": item['unit'],
-                "Req Qty": measured_qty,
-                "Rate (MMK)": ls_rate,
-                "Amount (MMK)": amount
-            }]
-
-            df_item = pd.DataFrame(calc_rows)
-            st.dataframe(df_item, use_container_width=True)
+                "Quantity": f"{measured_qty:,.2f}",
+                "Rate (MMK)": f"{ls_rate:,.2f}",
+                "Per": item['unit'],
+                "Amount (MMK)": f"{amount:,.2f}"
+            })
 
             labour_summary[item['title']] = {
                 "unit": item['unit'],
@@ -386,7 +400,6 @@ def main():
                 "rate": ls_rate,
                 "amount": amount
             }
-            grand_total += amount
 
         elif item['breakdown']:
             try:
@@ -394,7 +407,9 @@ def main():
             except (ValueError, TypeError):
                 std_base_qty = 100.0
 
-            calc_rows = []
+            mat_breakdown = []
+            lab_breakdown = []
+
             for row in item['breakdown']:
                 part = row['particular']
                 std_qty = row['qty']
@@ -403,38 +418,77 @@ def main():
                 req_qty = (std_qty / std_base_qty) * measured_qty
                 unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
-
-                calc_rows.append({
-                    "Particular": part,
-                    "Unit": u,
-                    "Req Qty": round(req_qty, 3),
-                    "Rate (MMK)": unit_rate,
-                    "Amount (MMK)": round(amount, 2),
-                })
+                item_total_cost += amount
 
                 part_lower = part.lower()
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
-                target_dict = labour_summary if is_labour else material_summary
+                row_data = {
+                    "part": part,
+                    "unit": u,
+                    "qty": req_qty,
+                    "rate": unit_rate,
+                    "amount": amount
+                }
 
+                if is_labour:
+                    lab_breakdown.append(row_data)
+                else:
+                    mat_breakdown.append(row_data)
+
+                # Global Summary ထဲထည့်ရန်
+                target_dict = labour_summary if is_labour else material_summary
                 if part not in target_dict:
-                    target_dict[part] = {
-                        "unit": u,
-                        "qty": req_qty,
-                        "rate": unit_rate,
-                        "amount": amount
-                    }
+                    target_dict[part] = {"unit": u, "qty": req_qty, "rate": unit_rate, "amount": amount}
                 else:
                     target_dict[part]["qty"] += req_qty
                     target_dict[part]["amount"] += amount
 
-            df_item = pd.DataFrame(calc_rows)
-            st.dataframe(df_item, use_container_width=True)
+            # Material Section ထည့်သွင်းခြင်း
+            if mat_breakdown:
+                display_rows.append({
+                    "Item": "", "Particular": "  📦 Material", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
+                })
+                for m in mat_breakdown:
+                    display_rows.append({
+                        "Item": "",
+                        "Particular": f"      {m['part']}",
+                        "Unit": m['unit'],
+                        "Quantity": f"{m['qty']:,.2f}",
+                        "Rate (MMK)": f"{m['rate']:,.2f}" if m['rate'] > 0 else "-",
+                        "Per": m['unit'],
+                        "Amount (MMK)": f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
+                    })
 
-            item_total = df_item["Amount (MMK)"].sum()
-            grand_total += item_total
-        else:
-            st.warning("Breakdown ဒေတာ မရှိပါ။")
+            # Labour Section ထည့်သွင်းခြင်း
+            if lab_breakdown:
+                display_rows.append({
+                    "Item": "", "Particular": "  👷 Labour", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
+                })
+                for l in lab_breakdown:
+                    display_rows.append({
+                        "Item": "",
+                        "Particular": f"      {l['part']}",
+                        "Unit": l['unit'],
+                        "Quantity": f"{l['qty']:,.2f}",
+                        "Rate (MMK)": f"{l['rate']:,.2f}",
+                        "Per": l['unit'],
+                        "Amount (MMK)": f"{l['amount']:,.2f}"
+                    })
+
+        # Total Cost Row
+        display_rows.append({
+            "Item": "",
+            "Particular": "  💰 Total Cost",
+            "Unit": "",
+            "Quantity": "",
+            "Rate (MMK)": "",
+            "Per": "",
+            "Amount (MMK)": f"**{item_total_cost:,.2f}**"
+        })
+
+        st.dataframe(pd.DataFrame(display_rows), use_container_width=True, hide_index=True)
+        grand_total += item_total_cost
 
     st.divider()
 
