@@ -95,6 +95,7 @@ def main():
         rate_maistry = st.number_input("Maistry", value=30000.0)
         rate_blacksmith = st.number_input("Blacksmith / Steel Worker", value=28000.0)
         rate_welder = st.number_input("Welder", value=30000.0)
+        rate_surveyor = st.number_input("Surveyor", value=35000.0)
 
         st.subheader("🧱 Concrete & Earth Materials")
         rate_cement = st.number_input("Cement", value=12000.0)
@@ -185,6 +186,7 @@ def main():
         "Blacksmith": rate_blacksmith,
         "Steel worker": rate_blacksmith,
         "Welder": rate_welder,
+        "Surveyor": rate_surveyor,
         "Cement": rate_cement,
         "Sand": rate_sand,
         "River Shingle (1-1/2\" gauge)": rate_shingle,
