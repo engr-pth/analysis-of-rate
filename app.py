@@ -107,18 +107,101 @@ def export_measurement_template():
     return buffer
 
 
+import os
+import io
+import pandas as pd
+import streamlit as st
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Labour/Worker Keywords List
+LABOUR_KEYWORDS = [
+    "worker", "digger", "mason", "carpenter", "maistry", 
+    "blacksmith", "steel worker", "welder", "surveyor", 
+    "smith", "machine driver", "charges", "labour",
+    "hoisting and fixing", "carriage to site", "site clearing", "dressing"
+]
+
+@st.cache_data
+def parse_excel_rates(file_path):
+    if not os.path.exists(file_path):
+        return []
+    try:
+        df_raw = pd.read_excel(file_path, dtype=str)
+    except Exception as e:
+        st.error(f"ဖိုင်ဖတ်၍ မရပါ ({file_path}): {e}")
+        return []
+
+    items = []
+    current_item = None
+
+    for idx, row in df_raw.iterrows():
+        item_no = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ''
+        particular = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ''
+        unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
+        qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
+
+        if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
+            if current_item and particular not in ['', 'nan', 'NaN', 'Particular']:
+                try:
+                    qty_val = float(qty)
+                except (ValueError, TypeError):
+                    qty_val = 0.0
+                
+                current_item['breakdown'].append({
+                    'particular': particular,
+                    'unit': unit,
+                    'qty': qty_val
+                })
+            continue
+
+        if particular not in ['', 'nan', 'NaN', 'Particular']:
+            if current_item:
+                items.append(current_item)
+            current_item = {
+                'item_no': item_no,
+                'title': particular,
+                'unit': unit,
+                'std_qty': qty,
+                'breakdown': []
+            }
+
+    if current_item:
+        items.append(current_item)
+
+    return items
+
+
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Excel/CSV ဖိုင် တင်လိုက်သည်နှင့် Item No များကို ရှာဖွေပြီး 
-    Multiselect Widgets များတွင် Auto-Select ပေးခြင်းနှင့် Data ဖြည့်သွင်းပေးခြင်း
+    Excel/CSV ဖိုင် တင်လိုက်သည်နှင့် Normal Template ရော Export ထုတ်ထားသော Measurement Sheet ကိုပါ
+    အလိုအလျောက် ရှာဖွေဖတ်ရှုပြီး Auto-Select & Import လုပ်ပေးသည့် Function
     """
     try:
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
-            df = pd.read_excel(uploaded_file)
+            # First, check raw dataframe without header
+            df_raw = pd.read_excel(uploaded_file, header=None)
+            
+            # Find row index containing 'item' in column values
+            header_row_idx = None
+            for idx, row in df_raw.iterrows():
+                row_vals = row.astype(str).str.lower().tolist()
+                if any('item' in v for v in row_vals if v):
+                    header_row_idx = idx
+                    break
+            
+            if header_row_idx is not None:
+                df = pd.read_excel(uploaded_file, header=header_row_idx)
+            else:
+                df = pd.read_excel(uploaded_file)
 
-        df.columns = df.columns.str.strip().str.lower()
+        # Clean column names
+        df.columns = [str(c).strip().lower() for c in df.columns]
         
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'desc' in c or 'particular' in c), None)
@@ -130,11 +213,19 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
         col_type = next((c for c in df.columns if 'type' in c or 'deduction' in c), None)
 
         if not col_item:
-            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' Column မပါဝင်ပါ။")
+            st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' Column မပါဝင်ပါ။ အခြား Template ဖိုင် သုံးကြည့်ပါ။")
             return
 
+        # Clean values & filter out empty or total summary rows
+        valid_rows = df[df[col_item].notna() & (df[col_item].astype(str).str.strip() != '')].copy()
+        valid_rows = valid_rows[~valid_rows[col_item].astype(str).str.lower().str.contains('item no|total|detail')]
+
         # Excel ဖိုင်ထဲတွင် ပါဝင်သော Item No များ
-        excel_item_nos = df[col_item].astype(str).str.strip().unique().tolist()
+        excel_item_nos = valid_rows[col_item].astype(str).str.strip().unique().tolist()
+
+        if not excel_item_nos:
+            st.warning("⚠️ Excel ဖိုင်ထဲတွင် Item No. များ ရှာမတွေ့ပါ။")
+            return
 
         # Multiselect State များကို Auto-Select လုပ်ပေးရန် ပြင်ဆင်ခြင်း
         st.session_state['selected_ew'] = [k for k, v in all_item_maps['ew'].items() if str(v['item_no']).strip() in excel_item_nos]
@@ -154,17 +245,28 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             item_no_str = str(item['item_no']).strip()
             rows_state_key = f"rows_data_{item_no_str}_{idx}"
 
-            item_df = df[df[col_item].astype(str).str.strip() == item_no_str]
+            item_df = valid_rows[valid_rows[col_item].astype(str).str.strip() == item_no_str]
 
             if not item_df.empty:
                 new_rows = []
                 for _, r in item_df.iterrows():
                     desc_val = str(r[col_desc]).strip() if col_desc and pd.notna(r[col_desc]) else "Section"
-                    no_val = int(r[col_no]) if col_no and pd.notna(r[col_no]) else 1
-                    l_val = float(r[col_l]) if col_l and pd.notna(r[col_l]) else 0.0
-                    b_val = float(r[col_b]) if col_b and pd.notna(r[col_b]) else 0.0
-                    h_val = float(r[col_h]) if col_h and pd.notna(r[col_h]) else 0.0
-                    ded_val = float(r[col_ded]) if col_ded and pd.notna(r[col_ded]) else 0.0
+                    
+                    try:
+                        no_val = int(float(r[col_no])) if col_no and pd.notna(r[col_no]) else 1
+                    except (ValueError, TypeError):
+                        no_val = 1
+
+                    def safe_float(val):
+                        try:
+                            return float(val)
+                        except (ValueError, TypeError):
+                            return 0.0
+
+                    l_val = safe_float(r[col_l]) if col_l else 0.0
+                    b_val = safe_float(r[col_b]) if col_b else 0.0
+                    h_val = safe_float(r[col_h]) if col_h else 0.0
+                    ded_val = safe_float(r[col_ded]) if col_ded else 0.0
                     
                     type_str = str(r[col_type]).lower() if col_type and pd.notna(r[col_type]) else ""
                     is_ded_row = "ded" in type_str or "minus" in type_str or "sub" in type_str
@@ -183,7 +285,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     st.session_state[rows_state_key] = new_rows
                     imported_rows_count += len(new_rows)
 
-        st.success(f"✅ Excel မှ Item များနှင့် Measurement ({imported_rows_count}) ခုကို Auto-Select ပြုလုပ်ပြီးပါပြီ။")
+        st.success(f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို Auto-Select ပြုလုပ်ပြီးပါပြီ။")
 
     except Exception as e:
         st.error(f"❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်: {e}")
