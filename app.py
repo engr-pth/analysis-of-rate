@@ -177,14 +177,23 @@ def parse_excel_rates(file_path):
 
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
     """
-    Category ကိုပါ တိကျစွာ တိုက်စစ်၍ မသက်ဆိုင်သော Work Category မှ Item များ Auto-Select မဝင်အောင် ပြင်ထားသော Function
+    Excel ဖိုင်ဖတ်ရာတွင် Streamlit BytesIO Error မတက်စေဘဲ 
+    - Auto-Select Matching (EW/CC/IR)
+    - Particular Name နဲ့ Measurement Values (L, B, H, Ded) များ
+    တိကျစွာ Auto-Import လုပ်ပေးသည့် Function
     """
     try:
+        # File Pointer ကို အစသို့ ပြန်ပို့ခြင်း (Streamlit BytesIO Fix)
+        uploaded_file.seek(0)
+
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
+            df_raw = df.copy()
         else:
+            # Read whole excel without header first
             df_raw = pd.read_excel(uploaded_file, header=None)
             
+            # Find row index containing BOTH 'particular'/'description' and 'no'/'item'
             header_row_idx = None
             for idx, row in df_raw.iterrows():
                 row_vals = row.dropna().astype(str).str.lower().tolist()
@@ -192,13 +201,17 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     header_row_idx = idx
                     break
             
+            # Re-read Excel from header row index with file pointer reset
+            uploaded_file.seek(0)
             if header_row_idx is not None:
                 df = pd.read_excel(uploaded_file, header=header_row_idx)
             else:
                 df = pd.read_excel(uploaded_file)
 
+        # Clean Column Names
         df.columns = [str(c).strip().lower() for c in df.columns]
         
+        # Robust Column Search
         col_item = next((c for c in df.columns if 'item' in c), None)
         col_desc = next((c for c in df.columns if 'particular' in c or 'desc' in c), None)
         col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
@@ -212,10 +225,11 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.error("❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။")
             return
 
+        # Data Cleaning
         valid_rows = df[df[col_item].notna() & (df[col_item].astype(str).str.strip() != '')].copy()
         valid_rows['clean_item_no'] = valid_rows[col_item].astype(str).str.strip()
         
-        # Header / Section Title များကို ဖယ်ထုတ်ခြင်း
+        # Header / Non-data Row များ ဖယ်ထုတ်ခြင်း
         valid_rows = valid_rows[
             ~valid_rows['clean_item_no'].str.lower().str.contains('item no|total|detail|description') &
             valid_rows[col_desc].notna() &
@@ -228,40 +242,39 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.warning("⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။")
             return
 
-        # --- SMART CATEGORY MATCHING LOGIC ---
-        # Excel ဖိုင်၏ Full Text တစ်ခုလုံးကို ယူ၍ Category ရှာဖွေခြင်း (e.g. Earth work, Concrete work, Steel)
-        full_text = df_raw.astype(str).values.flatten()
-        full_text_str = " ".join(full_text).lower()
+        # --- SMART CATEGORY MATCHING (မသက်ဆိုင်သော Concrete / Iron Work များကို ရှောင်ရန်) ---
+        full_text_str = " ".join(df_raw.astype(str).values.flatten()).lower()
 
-        # Category mapping checks
         selected_ew, selected_cc, selected_ir = [], [], []
 
+        # 1. Earthwork Selection
         for k, v in all_item_maps['ew'].items():
             item_no_str = str(v['item_no']).strip()
             if item_no_str in excel_item_nos:
-                # Earthwork တွင် သေချာပါဝင်ပါက Select လုပ်မည်
                 selected_ew.append(k)
 
+        # 2. Concrete Work Selection (Check Item No + Concrete Keywords)
         for k, v in all_item_maps['cc'].items():
             item_no_str = str(v['item_no']).strip()
-            title_keywords = v['title'].lower().split()[:3] # Item title ၏ ပထမ စကားလုံးအချို့
-            # Concrete Work Keyword ပါဝင်မှသာ သို့မဟုတ် Title ကိုက်ညီမှသာ Select လုပ်မည်
-            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['concrete', 'cement', 'cc ']) and any(kw in full_text_str for kw in title_keywords):
-                selected_cc.append(k)
+            title_kw = [w for w in v['title'].lower().split() if len(w) > 3][:2]
+            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['concrete', 'cement', 'cc ']):
+                if not title_kw or any(kw in full_text_str for kw in title_kw):
+                    selected_cc.append(k)
 
+        # 3. Iron & Steel Work Selection (Check Item No + Iron Keywords)
         for k, v in all_item_maps['ir'].items():
             item_no_str = str(v['item_no']).strip()
-            title_keywords = v['title'].lower().split()[:3]
-            # Iron Work Keyword ပါဝင်မှသာ Select လုပ်မည်
-            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['iron', 'steel', 'rebar', 'w.i']) and any(kw in full_text_str for kw in title_keywords):
-                selected_ir.append(k)
+            title_kw = [w for w in v['title'].lower().split() if len(w) > 3][:2]
+            if item_no_str in excel_item_nos and any(kw in full_text_str for kw in ['iron', 'steel', 'rebar', 'w.i']):
+                if not title_kw or any(kw in full_text_str for kw in title_kw):
+                    selected_ir.append(k)
 
         # Update Session States
         st.session_state['selected_ew'] = selected_ew
         st.session_state['selected_cc'] = selected_cc
         st.session_state['selected_ir'] = selected_ir
 
-        # Row Data များ Auto-Import ပြုလုပ်ခြင်း
+        # Flat List Of Selected Items
         all_selected_keys = selected_ew + selected_cc + selected_ir
         all_items_flat = []
         for cat in ['ew', 'cc', 'ir']:
@@ -269,6 +282,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                 if k in all_selected_keys:
                     all_items_flat.append(item)
 
+        # Extract Measurements (Particulars, L, B, H, Ded)
         imported_rows_count = 0
         for idx, item in enumerate(all_items_flat):
             item_no_str = str(item['item_no']).strip()
