@@ -552,29 +552,13 @@ def main():
     # ==========================================
     # Main Page Tools (Sidebar အစား Main UI တွင် ထည့်သွင်းထားခြင်း)
     # ==========================================
-    with st.expander("🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)", expanded=False):
-        tab_upload, tab_rates, tab_calc, tab_conv = st.tabs([
-            "📥 Excel ဖိုင်တင်ရန်", 
+    with st.expander("🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)", expanded=True):
+        tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             "⚙️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး", 
             "🧮 ဂဏန်းတွက်စက်", 
-            "🔄 ယူနစ်ပြောင်းရန်"
+            "🔄 ယူနစ်ပြောင်းရန်",
+            "📥 Excel ဖိုင်တင်ရန်"
         ])
-
-        with tab_upload:
-            st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
-            template_buffer = export_measurement_template()
-            st.download_button(
-                label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
-                data=template_buffer,
-                file_name="Measurement_Input_Template.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            st.divider()
-            uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
-            if uploaded_meas_file is not None:
-                if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
-                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
-                    st.rerun()
 
         with tab_rates:
             st.subheader("ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
@@ -669,6 +653,22 @@ def main():
 
                 st.info(f"👉 **အလေးချိန် = {total_kg:,.2f} ကီလိုဂရမ် ({total_ton:.4f} တန်)**")
 
+        with tab_upload:
+            st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
+            template_buffer = export_measurement_template()
+            st.download_button(
+                label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
+                data=template_buffer,
+                file_name="Measurement_Input_Template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            st.divider()
+            uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
+            if uploaded_meas_file is not None:
+                if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
+                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
+                    st.rerun()
+
     # Fallback Values for Rates if tab_rates is not opened
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
@@ -740,11 +740,11 @@ def main():
     
     col_e, col_c, col_i = st.columns(3)
     with col_e:
-        show_earthwork = st.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=True)
+        show_earthwork = st.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=False)
     with col_c:
-        show_concrete = st.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=True)
+        show_concrete = st.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=False)
     with col_i:
-        show_iron = st.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=True)
+        show_iron = st.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=False)
 
     selected_items_list = []
 
