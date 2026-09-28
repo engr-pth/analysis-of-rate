@@ -443,7 +443,7 @@ def main():
         page_title="Civil Site Estimator & QS Tool", layout="wide", page_icon="🏗️"
     )
 
-    # Improved Mobile/App style CSS Customizations
+    # Corrected CSS Customizations
     st.markdown("""
         <style>
             /* Top Banner Styling */
@@ -510,7 +510,7 @@ def main():
                 margin-bottom: 15px;
             }
         </style>
-    """, unsafe_unsafe_html=True if hasattr(st, "unsafe_html") else True)
+    """, unsafe_allow_html=True)
 
     # Modern Header Banner (Mobile App Banner Look)
     st.markdown("""
@@ -892,7 +892,7 @@ def main():
             st.markdown("**📊 တိုင်းတာချက် စာရင်းချုပ်**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             
-            # Clean Mobile-style Result Badge
+            # Result Badge
             st.info(f"💡 **Item {item_no_str} စုစုပေါင်း = `{item_total_qty:,.2f} {item['unit']}`**")
 
     # Excel Download Button
@@ -1101,7 +1101,7 @@ def main():
 
     st.divider()
 
-    # App-style Modern Metric Summary Dashboard Cards
+    # Metric Dashboard Summary
     col_m1, col_m2, col_m3 = st.columns(3)
     col_m1.metric("📦 စုစုပေါင်း ပစ္စည်းဖိုး", f"{total_mat_cost:,.2f} ကျပ်")
     col_m2.metric("👷 စုစုပေါင်း လုပ်အားခ", f"{total_lab_cost:,.2f} ကျပ်")
