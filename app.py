@@ -440,42 +440,85 @@ def export_boq_summary_excel(material_summary, labour_summary):
 
 def main():
     st.set_page_config(
-        page_title="ဆိုဒ်တွက် တွက်ချက်ရေးစနစ် (Site QS Tool)", layout="wide", page_icon="🏗️"
+        page_title="Civil Site Estimator & QS Tool", layout="wide", page_icon="🏗️"
     )
 
-    # UI/UX Style Custom CSS (Mobile Friendly & Large Touch Targets)
+    # Improved Mobile/App style CSS Customizations
     st.markdown("""
         <style>
-            .stButton > button {
-                font-size: 16px !important;
+            /* Top Banner Styling */
+            .main-header {
+                background: linear-gradient(135deg, #0284c7, #2563eb);
+                padding: 20px;
+                border-radius: 12px;
+                color: white;
+                margin-bottom: 20px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+            .main-header h1 {
+                color: white !important;
+                font-size: 26px !important;
+                margin-bottom: 5px !important;
+            }
+            .main-header p {
+                color: #e0f2fe !important;
+                font-size: 14px !important;
+            }
+            
+            /* Card & Box Style */
+            .qs-card {
+                background-color: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                padding: 16px;
+                margin-bottom: 15px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }
+            
+            /* Metric Box Style */
+            div[data-testid="stMetricValue"] {
+                font-size: 22px !important;
                 font-weight: bold !important;
+                color: #1e3a8a !important;
+            }
+            
+            /* Buttons Customization */
+            .stButton > button {
+                font-size: 15px !important;
+                font-weight: 600 !important;
                 border-radius: 8px !important;
-                padding: 10px 20px !important;
+                padding: 8px 16px !important;
+                transition: all 0.2s ease-in-out;
             }
             .stDownloadButton > button {
                 font-size: 15px !important;
                 font-weight: bold !important;
                 border-radius: 8px !important;
-                background-color: #1E3A8A !important;
+                background-color: #0284c7 !important;
                 color: white !important;
+                width: 100%;
             }
-            .card-box {
-                background-color: #F3F4F6;
-                padding: 15px;
-                border-radius: 10px;
-                margin-bottom: 10px;
-                border-left: 5px solid #1E3A8A;
-            }
-            label {
-                font-size: 15px !important;
-                font-weight: 600 !important;
-                color: #1F2937 !important;
+            
+            /* Subheaders */
+            .section-title {
+                color: #1e293b;
+                font-weight: 700;
+                font-size: 18px;
+                border-left: 4px solid #0284c7;
+                padding-left: 10px;
+                margin-top: 15px;
+                margin-bottom: 15px;
             }
         </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_unsafe_html=True if hasattr(st, "unsafe_html") else True)
 
-    st.title("🏗️ ဆိုဒ်တွက် အတိုင်းအတာနှင့် စရိတ်တွက်ချက်စနစ်")
-    st.caption("လက်သမား၊ ပန်းရံ၊ ချီကွေး မည်သူမဆို လွယ်လွယ်ကူကူ အတိုင်းအတာရိုက်ထည့်၍ ကုန်ကျစရိတ် တွက်ချက်နိုင်ပါသည်။")
+    # Modern Header Banner (Mobile App Banner Look)
+    st.markdown("""
+        <div class="main-header">
+            <h1>🏗️ Civil Calculation & QS Tool</h1>
+            <p>ဆိုဒ်တွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် Material/Labour BOQ စာရင်း လွယ်ကူစွာ တွက်ချက်ပါ</p>
+        </div>
+    """, unsafe_allow_html=True)
 
     # Load Rate Master Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
@@ -499,7 +542,7 @@ def main():
     if 'selected_ir' not in st.session_state:
         st.session_state['selected_ir'] = []
 
-    # Show messages if imported
+    # Messages
     if st.session_state.get('last_excel_error'):
         st.error(st.session_state['last_excel_error'])
 
@@ -507,7 +550,7 @@ def main():
         st.success(st.session_state['excel_import_success'])
 
     # ==========================================
-    # Sidebar Tools: Upload Data, Master Rates & Calc
+    # Sidebar Tools
     # ==========================================
     st.sidebar.title("🛠️ အရန်ကိရိယာများ")
     tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Excel ဖိုင်တင်ရန်", "⚙️ ပစ္စည်း/လုပ်အားခ", "🧮 ဂဏန်းတွက်စက်", "🔄 ယူနစ်ပြောင်းရန်"])
@@ -656,14 +699,17 @@ def main():
     }
 
     # ==========================================
-    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း
+    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း (Grid Cards View)
     # ==========================================
-    st.subheader("၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ")
+    st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ</div>', unsafe_allow_html=True)
     
     col_e, col_c, col_i = st.columns(3)
-    show_earthwork = col_e.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=True)
-    show_concrete = col_c.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=True)
-    show_iron = col_i.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=True)
+    with col_e:
+        show_earthwork = st.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=True)
+    with col_c:
+        show_concrete = st.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=True)
+    with col_i:
+        show_iron = st.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=True)
 
     selected_items_list = []
 
@@ -683,7 +729,7 @@ def main():
             selected_items_list.append(ir_options[key])
 
     if not selected_items_list:
-        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် လက်ဝဲဘက် အကွက်မှ Excel ဖိုင် တင်သွင်းပါ။")
+        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် လက်ဝဲဘက်မှ Excel ဖိုင် တင်သွင်းပါ။")
         return
 
     st.divider()
@@ -691,7 +737,7 @@ def main():
     # ==========================================
     # အဆင့် (၂) - အတိုင်းအတာများ ရိုက်ထည့်ခြင်း
     # ==========================================
-    st.subheader("📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)")
+    st.markdown('<div class="section-title">📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)</div>', unsafe_allow_html=True)
 
     item_quantities = {}
     ls_custom_rates = {}
@@ -718,7 +764,7 @@ def main():
                 }
             ]
 
-        with st.expander(f"📌 အကြောင်းအရာ ({idx+1}): Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
+        with st.expander(f"📌 Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
 
@@ -734,9 +780,9 @@ def main():
                 meas_rows.append({
                     "လုပ်ငန်းနေရာ": p_desc,
                     "အရေအတွက်": no_val,
-                    "အရှည် (ပေ)": "-",
-                    "အနံ (ပေ)": "-",
-                    "အမြင့် (ပေ)": "-",
+                    "အရှည် (L)": "-",
+                    "အနံ (B)": "-",
+                    "အမြင့် (H)": "-",
                     "အမျိုးအစား": "အပေါင်း",
                     "ရလဒ်": no_val
                 })
@@ -763,15 +809,15 @@ def main():
                         key=f"desc_{idx}_{r_idx}_{item_no_str}"
                     )
                     no_val = c_no.number_input("အရေအတွက်", min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
-                    l_val = c_l.number_input("အရှည် (ပေ)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
+                    l_val = c_l.number_input("အရှည် L (ပေ)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
                     
                     b_val = 0.0
                     if not is_rft:
-                        b_val = c_b.number_input("အနံ (ပေ)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
+                        b_val = c_b.number_input("အနံ B (ပေ)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
                     
                     h_val = 0.0
                     if not is_sft and not is_rft:
-                        h_val = c_h.number_input("အမြင့်/အထူ (ပေ)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
+                        h_val = c_h.number_input("အမြင့်/အထူ H (ပေ)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
                     
                     ded_val = c_ded.number_input("အနှုတ်ကျင်း (Deduction)", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
                     is_ded_row = c_is_ded.checkbox("➖ အနှုတ်လိုင်း ဖြစ်သည်", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
@@ -808,9 +854,9 @@ def main():
                     meas_rows.append({
                         "လုပ်ငန်းနေရာ": p_desc,
                         "အရေအတွက်": no_val,
-                        "အရှည် (ပေ)": l_val,
-                        "အနံ (ပေ)": b_val if not is_rft else "-",
-                        "အမြင့်/အထူ": h_val if (not is_sft and not is_rft) else "-",
+                        "အရှည် (L)": l_val,
+                        "အနံ (B)": b_val if not is_rft else "-",
+                        "အမြင့် (H)": h_val if (not is_sft and not is_rft) else "-",
                         "အနှုတ်": ded_val,
                         "အမျိုးအစား": "➖ အနှုတ်" if is_ded_row else "➕ အပေါင်း",
                         "ရလဒ်": sub_total_display
@@ -843,16 +889,18 @@ def main():
             item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
             
-            st.markdown("**📊 အတိုင်းအတာ စာရင်းချုပ် Table**")
+            st.markdown("**📊 တိုင်းတာချက် စာရင်းချုပ်**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
-            st.success(f"**Item {item_no_str} အတွက် စုစုပေါင်း ပမာဏ = `{item_total_qty:,.2f} {item['unit']}`**")
+            
+            # Clean Mobile-style Result Badge
+            st.info(f"💡 **Item {item_no_str} စုစုပေါင်း = `{item_total_qty:,.2f} {item['unit']}`**")
 
-    # Excel Download
+    # Excel Download Button
     meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
     st.download_button(
-        label="📥 တိုင်းတာချက်များကို Excel ဖိုင်ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
+        label="📥 Detail Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
         data=meas_excel_buffer,
-        file_name="Detail_Measurement_Sheet_Formulas.xlsx",
+        file_name="Detail_Measurement_Sheet.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
@@ -862,7 +910,7 @@ def main():
     # ==========================================
     # အဆင့် (၃) - စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်ခြင်း
     # ==========================================
-    st.subheader("📊 ၃။ စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis & Total)")
+    st.markdown('<div class="section-title">📊 ၃။ စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)</div>', unsafe_allow_html=True)
 
     grand_total = 0.0
     material_summary = {}
@@ -997,7 +1045,7 @@ def main():
     # ==========================================
     # အဆင့် (၄) - BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်
     # ==========================================
-    st.subheader("📜 ၄။ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ် (BOQ Summary)")
+    st.markdown('<div class="section-title">📜 ၄။ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ် (BOQ Summary)</div>', unsafe_allow_html=True)
 
     # Material Section
     st.markdown("### 📦 ၁။ ပစ္စည်းကုန်ကျစရိတ် စာရင်း (Material Summary)")
@@ -1018,7 +1066,6 @@ def main():
         st.table(pd.DataFrame(mat_rows))
     else:
         st.info("ပစ္စည်းစရိတ် မရှိပါ။")
-    st.info(f"👉 **စုစုပေါင်း ပစ္စည်းစရိတ် = `{total_mat_cost:,.2f} ကျပ်`**")
 
     st.divider()
 
@@ -1041,21 +1088,20 @@ def main():
         st.table(pd.DataFrame(lab_rows))
     else:
         st.info("လုပ်အားခ စရိတ် မရှိပါ။")
-    st.info(f"👉 **စုစုပေါင်း လုပ်အားခ = `{total_lab_cost:,.2f} ကျပ်`**")
 
-    # BOQ Download
+    # BOQ Download Button
     boq_excel_buffer = export_boq_summary_excel(material_summary, labour_summary)
     st.download_button(
         label="📥 BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
         data=boq_excel_buffer,
-        file_name="BOQ_Summary_Formulas.xlsx",
+        file_name="BOQ_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
 
     st.divider()
 
-    # Grand Totals Summary Box
+    # App-style Modern Metric Summary Dashboard Cards
     col_m1, col_m2, col_m3 = st.columns(3)
     col_m1.metric("📦 စုစုပေါင်း ပစ္စည်းဖိုး", f"{total_mat_cost:,.2f} ကျပ်")
     col_m2.metric("👷 စုစုပေါင်း လုပ်အားခ", f"{total_lab_cost:,.2f} ကျပ်")
