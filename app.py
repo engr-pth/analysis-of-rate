@@ -443,7 +443,7 @@ def main():
         page_title="Civil Site Estimator & QS Tool", layout="wide", page_icon="🏗️"
     )
 
-    # Corrected CSS Customizations
+    # CSS Customizations
     st.markdown("""
         <style>
             /* Top Banner Styling */
@@ -550,117 +550,152 @@ def main():
         st.success(st.session_state['excel_import_success'])
 
     # ==========================================
-    # Sidebar Tools
+    # Main Page Tools (Sidebar အစား Main UI တွင် ထည့်သွင်းထားခြင်း)
     # ==========================================
-    st.sidebar.title("🛠️ အရန်ကိရိယာများ")
-    tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Excel ဖိုင်တင်ရန်", "⚙️ ပစ္စည်း/လုပ်အားခ", "🧮 ဂဏန်းတွက်စက်", "🔄 ယူနစ်ပြောင်းရန်"])
-
-    with tab_upload:
-        st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
-        template_buffer = export_measurement_template()
-        st.download_button(
-            label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
-            data=template_buffer,
-            file_name="Measurement_Input_Template.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-        st.divider()
-        uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
-        if uploaded_meas_file is not None:
-            if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
-                parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
-                st.rerun()
-
-    with tab_rates:
-        st.subheader("ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
-        
-        st.markdown("---")
-        st.markdown("**👷 လုပ်အားခ ပေါက်ဈေးများ**")
-        rate_worker = st.number_input("အလုပ်သမား (ကျပ်)", value=25000.0, step=1000.0)
-        rate_digger = st.number_input("မြေကျင်းတူး (ကျပ်)", value=25000.0, step=1000.0)
-        rate_mason = st.number_input("ပန်းရံဆရာ (ကျပ်)", value=25000.0, step=1000.0)
-        rate_carpenter = st.number_input("လက်သမားဆရာ (ကျပ်)", value=35000.0, step=1000.0)
-        rate_maistry = st.number_input("ခေါင်းဆောင် / မေစတရီ (ကျပ်)", value=30000.0, step=1000.0)
-        rate_blacksmith = st.number_input("သံချည်သံကွေးဆရာ (ကျပ်)", value=28000.0, step=1000.0)
-        rate_welder = st.number_input("ဝိန်းဆရာ (ကျပ်)", value=30000.0, step=1000.0)
-        rate_surveyor = st.number_input("တိုင်းတာရေး / Surveyor (ကျပ်)", value=35000.0, step=1000.0)
-
-        st.markdown("---")
-        st.markdown("**🧱 ကွန်ကရစ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
-        rate_cement = st.number_input("ဘိလပ်မြေ (၁ အိတ်)", value=12000.0, step=500.0)
-        rate_sand = st.number_input("သဲ (ကျင်း)", value=45000.0, step=1000.0)
-        rate_shingle = st.number_input("မြစ်ကျောက် (ကျင်း)", value=85000.0, step=1000.0)
-        rate_gravel = st.number_input("ကျောက်စုန်း/ကျောက်စိစစ် (ကျင်း)", value=60000.0, step=1000.0)
-        rate_granite = st.number_input("ဂရက်နိုက် ကျောက်စိစစ် (ကျင်း)", value=95000.0, step=1000.0)
-        rate_impermo = st.number_input("Impermo ရေကာဆေး", value=3500.0)
-        rate_ironite = st.number_input("Ironite ဆေး", value=4000.0)
-        rate_timber_scantling = st.number_input("သစ် (Timber scantling)", value=35000.0)
-        rate_timber_planks = st.number_input("သစ်ပျဉ် (Timber planks)", value=1200.0)
-        rate_nails = st.number_input("သံမှို (Nails)", value=3360.0)
-
-        st.markdown("---")
-        st.markdown("**⚙️ သံနှင့် တည်ဆောက်ရေး ပစ္စည်းဈေး**")
-        rate_steel_bar = st.number_input("သံချောင်း/ဘား M.S Bar (၁ တန်)", value=2800000.0, step=10000.0)
-        rate_binding_wire = st.number_input("ဘိုင်းဒင်းဝါယာ/သံဇကာနန်း (ပိဿာ/ပေါင်)", value=6500.0)
-        rate_structural_steel = st.number_input("Structural Steel (၁ တန်)", value=3000000.0)
-        rate_rs_girder = st.number_input("R.S Girder (1 cwt)", value=150000.0)
-        rate_carriage = st.number_input("ဆိုဒ်အရောက် သယ်ယူခ (1 cwt)", value=5000.0)
-        rate_hoisting = st.number_input("အထက်သို့ တင်/ဆင်ခ (1 cwt)", value=15000.0)
-
-    with tab_calc:
-        st.subheader("🧮 အလွယ်တွက်စက်")
-        calc_expr = st.text_input("တွက်လိုသည်များကို ရိုက်ထည့်ပါ (ဥပမာ- 10*12.5 + 5):", value="")
-        if calc_expr:
-            try:
-                allowed_chars = "0123456789+-*/(). "
-                if all(char in allowed_chars for char in calc_expr):
-                    res = eval(calc_expr)
-                    st.success(f"**အဖြေ = {res:,.4f}**")
-                else:
-                    st.error("ဂဏန်းနှင့် သင်္ကေတများသာ ရိုက်ထည့်ပါ။")
-            except Exception:
-                st.error("တွက်ချက်မှု အမှားရှိနေပါသည် structure ကို ပြန်စစ်ပါ။")
-
-    with tab_conv:
-        st.subheader("🔄 ယူနစ် အပြောင်းအလဲ")
-        conv_type = st.selectbox("ပြောင်းလိုသည်ကို ရွေးပါ:", [
-            "လက်မ -> ပေ (Inches -> Feet)",
-            "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)",
-            "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)",
-            "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)"
+    with st.expander("🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)", expanded=False):
+        tab_upload, tab_rates, tab_calc, tab_conv = st.tabs([
+            "📥 Excel ဖိုင်တင်ရန်", 
+            "⚙️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး", 
+            "🧮 ဂဏန်းတွက်စက်", 
+            "🔄 ယူနစ်ပြောင်းရန်"
         ])
 
-        if conv_type == "လက်မ -> ပေ (Inches -> Feet)":
-            inch_val = st.number_input("လက်မ (Inches):", min_value=0.0, value=6.0)
-            st.info(f"👉 **{inch_val} လက်မ = {inch_val / 12.0:.3f} ပေ**")
+        with tab_upload:
+            st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
+            template_buffer = export_measurement_template()
+            st.download_button(
+                label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
+                data=template_buffer,
+                file_name="Measurement_Input_Template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            st.divider()
+            uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
+            if uploaded_meas_file is not None:
+                if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
+                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
+                    st.rerun()
 
-        elif conv_type == "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)":
-            sft_val = st.number_input("စတုရန်းပေ (Sft):", min_value=0.0, value=100.0)
-            st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
+        with tab_rates:
+            st.subheader("ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
+            
+            col_r1, col_r2, col_r3 = st.columns(3)
+            
+            with col_r1:
+                st.markdown("**👷 လုပ်အားခ ပေါက်ဈေးများ**")
+                rate_worker = st.number_input("အလုပ်သမား (ကျပ်)", value=25000.0, step=1000.0)
+                rate_digger = st.number_input("မြေကျင်းတူး (ကျပ်)", value=25000.0, step=1000.0)
+                rate_mason = st.number_input("ပန်းရံဆရာ (ကျပ်)", value=25000.0, step=1000.0)
+                rate_carpenter = st.number_input("လက်သမားဆရာ (ကျပ်)", value=35000.0, step=1000.0)
+                rate_maistry = st.number_input("ခေါင်းဆောင် / မေစတရီ (ကျပ်)", value=30000.0, step=1000.0)
+                rate_blacksmith = st.number_input("သံချည်သံကွေးဆရာ (ကျပ်)", value=28000.0, step=1000.0)
+                rate_welder = st.number_input("ဝိန်းဆရာ (ကျပ်)", value=30000.0, step=1000.0)
+                rate_surveyor = st.number_input("တိုင်းတာရေး / Surveyor (ကျပ်)", value=35000.0, step=1000.0)
 
-        elif conv_type == "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)":
-            cft_val = st.number_input("ကုဗပေ (Cft):", min_value=0.0, value=100.0)
-            st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
+            with col_r2:
+                st.markdown("**🧱 ကွန်ကရစ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
+                rate_cement = st.number_input("ဘိလပ်မြေ (၁ အိတ်)", value=12000.0, step=500.0)
+                rate_sand = st.number_input("သဲ (ကျင်း)", value=45000.0, step=1000.0)
+                rate_shingle = st.number_input("မြစ်ကျောက် (ကျင်း)", value=85000.0, step=1000.0)
+                rate_gravel = st.number_input("ကျောက်စုန်း/ကျောက်စိစစ် (ကျင်း)", value=60000.0, step=1000.0)
+                rate_granite = st.number_input("ဂရက်နိုက် ကျောက်စိစစ် (ကျင်း)", value=95000.0, step=1000.0)
+                rate_impermo = st.number_input("Impermo ရေကာဆေး", value=3500.0)
+                rate_ironite = st.number_input("Ironite ဆေး", value=4000.0)
+                rate_timber_scantling = st.number_input("သစ် (Timber scantling)", value=35000.0)
+                rate_timber_planks = st.number_input("သစ်ပျဉ် (Timber planks)", value=1200.0)
+                rate_nails = st.number_input("သံမှို (Nails)", value=3360.0)
 
-        elif conv_type == "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)":
-            bar_dia = st.selectbox("သံဆိုဒ် အရွယ်အစား:", [
-                "10 mm (3/8\")", "12 mm (1/2\")", "16 mm (5/8\")", "20 mm (3/4\")", "25 mm (1\")"
+            with col_r3:
+                st.markdown("**⚙️ သံနှင့် တည်ဆောက်ရေး ပစ္စည်းဈေး**")
+                rate_steel_bar = st.number_input("သံချောင်း/ဘား M.S Bar (၁ တန်)", value=2800000.0, step=10000.0)
+                rate_binding_wire = st.number_input("ဘိုင်းဒင်းဝါယာ/သံဇကာနန်း (ပိဿာ/ပေါင်)", value=6500.0)
+                rate_structural_steel = st.number_input("Structural Steel (၁ တန်)", value=3000000.0)
+                rate_rs_girder = st.number_input("R.S Girder (1 cwt)", value=150000.0)
+                rate_carriage = st.number_input("ဆိုဒ်အရောက် သယ်ယူခ (1 cwt)", value=5000.0)
+                rate_hoisting = st.number_input("အထက်သို့ တင်/ဆင်ခ (1 cwt)", value=15000.0)
+
+        with tab_calc:
+            st.subheader("🧮 အလွယ်တွက်စက်")
+            calc_expr = st.text_input("တွက်လိုသည်များကို ရိုက်ထည့်ပါ (ဥပမာ- 10*12.5 + 5):", value="")
+            if calc_expr:
+                try:
+                    allowed_chars = "0123456789+-*/(). "
+                    if all(char in allowed_chars for char in calc_expr):
+                        res = eval(calc_expr)
+                        st.success(f"**အဖြေ = {res:,.4f}**")
+                    else:
+                        st.error("ဂဏန်းနှင့် သင်္ကေတများသာ ရိုက်ထည့်ပါ။")
+                except Exception:
+                    st.error("တွက်ချက်မှု အမှားရှိနေပါသည် structure ကို ပြန်စစ်ပါ။")
+
+        with tab_conv:
+            st.subheader("🔄 ယူနစ် အပြောင်းအလဲ")
+            conv_type = st.selectbox("ပြောင်းလိုသည်ကို ရွေးပါ:", [
+                "လက်မ -> ပေ (Inches -> Feet)",
+                "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)",
+                "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)",
+                "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)"
             ])
-            length_ft = st.number_input("စုစုပေါင်း အရှည် (ပေ):", min_value=0.0, value=100.0)
 
-            dia_mm_map = {
-                "10 mm (3/8\")": 10,
-                "12 mm (1/2\")": 12,
-                "16 mm (5/8\")": 16,
-                "20 mm (3/4\")": 20,
-                "25 mm (1\")": 25
-            }
-            d_mm = dia_mm_map[bar_dia]
-            wt_kg_per_ft = (d_mm * d_mm) / 533.0
-            total_kg = length_ft * wt_kg_per_ft
-            total_ton = total_kg / 1000.0
+            if conv_type == "လက်မ -> ပေ (Inches -> Feet)":
+                inch_val = st.number_input("လက်မ (Inches):", min_value=0.0, value=6.0)
+                st.info(f"👉 **{inch_val} လက်မ = {inch_val / 12.0:.3f} ပေ**")
 
-            st.info(f"👉 **အလေးချိန် = {total_kg:,.2f} ကီလိုဂရမ် ({total_ton:.4f} တန်)**")
+            elif conv_type == "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)":
+                sft_val = st.number_input("စတုရန်းပေ (Sft):", min_value=0.0, value=100.0)
+                st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
+
+            elif conv_type == "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)":
+                cft_val = st.number_input("ကုဗပေ (Cft):", min_value=0.0, value=100.0)
+                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
+
+            elif conv_type == "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)":
+                bar_dia = st.selectbox("သံဆိုဒ် အရွယ်အစား:", [
+                    "10 mm (3/8\")", "12 mm (1/2\")", "16 mm (5/8\")", "20 mm (3/4\")", "25 mm (1\")"
+                ])
+                length_ft = st.number_input("စုစုပေါင်း အရှည် (ပေ):", min_value=0.0, value=100.0)
+
+                dia_mm_map = {
+                    "10 mm (3/8\")": 10,
+                    "12 mm (1/2\")": 12,
+                    "16 mm (5/8\")": 16,
+                    "20 mm (3/4\")": 20,
+                    "25 mm (1\")": 25
+                }
+                d_mm = dia_mm_map[bar_dia]
+                wt_kg_per_ft = (d_mm * d_mm) / 533.0
+                total_kg = length_ft * wt_kg_per_ft
+                total_ton = total_kg / 1000.0
+
+                st.info(f"👉 **အလေးချိန် = {total_kg:,.2f} ကီလိုဂရမ် ({total_ton:.4f} တန်)**")
+
+    # Fallback Values for Rates if tab_rates is not opened
+    rate_worker = locals().get('rate_worker', 25000.0)
+    rate_digger = locals().get('rate_digger', 25000.0)
+    rate_mason = locals().get('rate_mason', 25000.0)
+    rate_carpenter = locals().get('rate_carpenter', 35000.0)
+    rate_maistry = locals().get('rate_maistry', 30000.0)
+    rate_blacksmith = locals().get('rate_blacksmith', 28000.0)
+    rate_welder = locals().get('rate_welder', 30000.0)
+    rate_surveyor = locals().get('rate_surveyor', 35000.0)
+
+    rate_cement = locals().get('rate_cement', 12000.0)
+    rate_sand = locals().get('rate_sand', 45000.0)
+    rate_shingle = locals().get('rate_shingle', 85000.0)
+    rate_gravel = locals().get('rate_gravel', 60000.0)
+    rate_granite = locals().get('rate_granite', 95000.0)
+    rate_impermo = locals().get('rate_impermo', 3500.0)
+    rate_ironite = locals().get('rate_ironite', 4000.0)
+    rate_timber_scantling = locals().get('rate_timber_scantling', 35000.0)
+    rate_timber_planks = locals().get('rate_timber_planks', 1200.0)
+    rate_nails = locals().get('rate_nails', 3360.0)
+
+    rate_steel_bar = locals().get('rate_steel_bar', 2800000.0)
+    rate_binding_wire = locals().get('rate_binding_wire', 6500.0)
+    rate_structural_steel = locals().get('rate_structural_steel', 3000000.0)
+    rate_rs_girder = locals().get('rate_rs_girder', 150000.0)
+    rate_carriage = locals().get('rate_carriage', 5000.0)
+    rate_hoisting = locals().get('rate_hoisting', 15000.0)
 
     rate_map = {
         "Worker": rate_worker,
@@ -699,7 +734,7 @@ def main():
     }
 
     # ==========================================
-    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း (Grid Cards View)
+    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း
     # ==========================================
     st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ</div>', unsafe_allow_html=True)
     
@@ -729,7 +764,7 @@ def main():
             selected_items_list.append(ir_options[key])
 
     if not selected_items_list:
-        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် လက်ဝဲဘက်မှ Excel ဖိုင် တင်သွင်းပါ။")
+        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် အထက်ပါ Excel Upload အကွက်မှ ဖိုင် တင်သွင်းပါ။")
         return
 
     st.divider()
