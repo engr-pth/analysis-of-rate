@@ -67,132 +67,18 @@ def parse_excel_rates(file_path):
     return items
 
 
-# =========================================================
-# Excel Helper Functions
-# =========================================================
-
-def export_measurement_template():
-    """အသုံးပြုသူများ Measurement Upload လုပ်ရန် နမူနာ Excel Template ထုတ်ပေးခြင်း"""
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Measurement Input Template"
-
-    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type"]
-    
-    header_fill = PatternFill(start_color="366092", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF")
-
-    for col_idx, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_idx, value=h)
-        cell.fill = header_fill
-        cell.font = header_font
-
-    sample_data = [
-        ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
-        ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
-        ["2", "Foundation Concrete Footing", 4, 6, 6, 1.5, 0, "Addition"],
-    ]
-
-    for row_idx, row_vals in enumerate(sample_data, start=2):
-        for col_idx, val in enumerate(row_vals, start=1):
-            ws.cell(row=row_idx, column=col_idx, value=val)
-
-    for col in ws.columns:
-        max_len = max(len(str(cell.value or '')) for cell in col)
-        col_letter = get_column_letter(col[0].column)
-        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
-
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-    return buffer
-
-
-import os
-import io
-import pandas as pd
-import streamlit as st
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Labour/Worker Keywords List
-LABOUR_KEYWORDS = [
-    "worker", "digger", "mason", "carpenter", "maistry", 
-    "blacksmith", "steel worker", "welder", "surveyor", 
-    "smith", "machine driver", "charges", "labour",
-    "hoisting and fixing", "carriage to site", "site clearing", "dressing"
-]
-
-@st.cache_data
-def parse_excel_rates(file_path):
-    if not os.path.exists(file_path):
-        return []
-    try:
-        df_raw = pd.read_excel(file_path, dtype=str)
-    except Exception as e:
-        st.error(f"ဖိုင်ဖတ်၍ မရပါ ({file_path}): {e}")
-        return []
-
-    items = []
-    current_item = None
-
-    for idx, row in df_raw.iterrows():
-        item_no = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else ''
-        particular = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ''
-        unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
-        qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
-
-        if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
-            if current_item and particular not in ['', 'nan', 'NaN', 'Particular']:
-                try:
-                    qty_val = float(qty)
-                except (ValueError, TypeError):
-                    qty_val = 0.0
-                
-                current_item['breakdown'].append({
-                    'particular': particular,
-                    'unit': unit,
-                    'qty': qty_val
-                })
-            continue
-
-        if particular not in ['', 'nan', 'NaN', 'Particular']:
-            if current_item:
-                items.append(current_item)
-            current_item = {
-                'item_no': item_no,
-                'title': particular,
-                'unit': unit,
-                'std_qty': qty,
-                'breakdown': []
-            }
-
-    if current_item:
-        items.append(current_item)
-
-    return items
-
-
 def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
-    """
-    Excel/CSV ဖတ်ရှုခြင်းနှင့် TypeError မတက်အောင် လုံခြုံစွာ ပြင်ဆင်ထားသော Function
-    """
     st.session_state['last_excel_error'] = None
 
     try:
         if uploaded_file is None:
             return
 
-        # File Pointer ကို အစသို့ ပြန်ပို့ခြင်း
         if hasattr(uploaded_file, 'seek'):
             uploaded_file.seek(0)
 
         file_name = getattr(uploaded_file, 'name', '').lower()
 
-        # Excel / CSV ဖတ်ရှုခြင်း
         try:
             if file_name.endswith('.csv'):
                 df_raw = pd.read_csv(uploaded_file, header=None)
@@ -206,7 +92,6 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             else:
                 df_raw = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
 
-        # Header Row တိကျစွာ ရှာဖွေခြင်း
         header_row_idx = None
         for idx, row in df_raw.iterrows():
             row_vals = row.dropna().astype(str).str.lower().tolist()
@@ -228,7 +113,6 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             else:
                 df = pd.read_excel(uploaded_file)
 
-        # Column Name Clean
         df.columns = [str(c).strip().lower() for c in df.columns]
         
         col_item = next((c for c in df.columns if 'item' in c), None)
@@ -267,7 +151,6 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
-        # 💡 [FIX HERE] Element တိုင်းကို str() သေချာပြောင်းပေး၍ TypeError ကို ဖြေရှင်းထားသည်
         full_text_str = " ".join([str(x) for x in df_raw.values.flatten() if pd.notna(x)]).lower()
 
         selected_ew, selected_cc, selected_ir = [], [], []
@@ -314,7 +197,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             if not item_df.empty:
                 new_rows = []
                 for _, r in item_df.iterrows():
-                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Section"
+                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "အကွက် ၁"
                     
                     try:
                         no_val = int(float(r[col_no])) if col_no and pd.notna(r[col_no]) else 1
@@ -351,15 +234,49 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     st.session_state[rows_state_key] = new_rows
                     imported_rows_count += len(new_rows)
 
-        st.session_state['excel_import_success'] = f"✅ Excel မှ Item များနှင့် Measurement Row ({imported_rows_count}) ခုကို အောင်မြင်စွာ Auto-Import ပြုလုပ်ပြီးပါပြီ။"
+        st.session_state['excel_import_success'] = f"✅ Excel မှ Item များနှင့် အတိုင်းအတာ စာရင်း ({imported_rows_count}) ခုကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။"
 
     except Exception as e:
         err_msg = traceback.format_exc()
-        st.session_state['last_excel_error'] = f"❌ Exception: {e}\n\n{err_msg}"
+        st.session_state['last_excel_error'] = f"❌ အမှားအယွင်း ရှိနေပါသည်: {e}\n\n{err_msg}"
+
+
+def export_measurement_template():
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Measurement Input Template"
+
+    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type"]
+    header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF")
+
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+
+    sample_data = [
+        ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
+        ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
+        ["2", "Foundation Concrete Footing", 4, 6, 6, 1.5, 0, "Addition"],
+    ]
+
+    for row_idx, row_vals in enumerate(sample_data, start=2):
+        for col_idx, val in enumerate(row_vals, start=1):
+            ws.cell(row=row_idx, column=col_idx, value=val)
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return buffer
 
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
-    """Detail Measurement Sheet ကို Excel Formula များဖြင့် Export ထုတ်ပေးသည့် Function"""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Measurement Sheet"
@@ -368,7 +285,7 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
     ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
     
     headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
-    header_fill = PatternFill(start_color="366092", fill_type="solid")
+    header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
     thin_border = Border(left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
                          top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9'))
@@ -452,7 +369,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
 
 
 def export_boq_summary_excel(material_summary, labour_summary):
-    """BOQ Material & Labour Summary ကို Excel Formula ပါဝင်အောင် Export ထုတ်ပေးသည့် Function"""
     wb = openpyxl.Workbook()
     
     ws_mat = wb.active
@@ -461,7 +377,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
     ws_mat['A1'].font = Font(size=14, bold=True, color='1F497D')
 
     headers = ["No.", "Particular Description", "Unit", "Quantity", "Rate (MMK)", "Amount (MMK)"]
-    header_fill = PatternFill(start_color="366092", fill_type="solid")
+    header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
 
     for col_idx, h in enumerate(headers, 1):
@@ -521,21 +437,45 @@ def export_boq_summary_excel(material_summary, labour_summary):
     buffer.seek(0)
     return buffer
 
-# Excel Import Error သို့မဟုတ် Success Message ကို Re-run ဖြစ်သော်လည်း မပျောက်ဘဲ ပြသပေးခြင်း
-if st.session_state.get('last_excel_error'):
-    st.error("❌ Excel ဖတ်ရှုရာတွင် အမှားအယွင်းရှိပါသည်:")
-    st.code(st.session_state['last_excel_error'], language="python")
-
-if st.session_state.get('excel_import_success'):
-    st.success(st.session_state['excel_import_success'])
-
 
 def main():
     st.set_page_config(
-        page_title="QS & Rate Analysis System", layout="wide", page_icon="🏗️"
+        page_title="ဆိုဒ်တွက် တွက်ချက်ရေးစနစ် (Site QS Tool)", layout="wide", page_icon="🏗️"
     )
 
-    st.title("🏗️ Estimation, QS & Rate Analysis System")
+    # UI/UX Style Custom CSS (Mobile Friendly & Large Touch Targets)
+    st.markdown("""
+        <style>
+            .stButton > button {
+                font-size: 16px !important;
+                font-weight: bold !important;
+                border-radius: 8px !important;
+                padding: 10px 20px !important;
+            }
+            .stDownloadButton > button {
+                font-size: 15px !important;
+                font-weight: bold !important;
+                border-radius: 8px !important;
+                background-color: #1E3A8A !important;
+                color: white !important;
+            }
+            .card-box {
+                background-color: #F3F4F6;
+                padding: 15px;
+                border-radius: 10px;
+                margin-bottom: 10px;
+                border-left: 5px solid #1E3A8A;
+            }
+            label {
+                font-size: 15px !important;
+                font-weight: 600 !important;
+                color: #1F2937 !important;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.title("🏗️ ဆိုဒ်တွက် အတိုင်းအတာနှင့် စရိတ်တွက်ချက်စနစ်")
+    st.caption("လက်သမား၊ ပန်းရံ၊ ချီကွေး မည်သူမဆို လွယ်လွယ်ကူကူ အတိုင်းအတာရိုက်ထည့်၍ ကုန်ကျစရိတ် တွက်ချက်နိုင်ပါသည်။")
 
     # Load Rate Master Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
@@ -546,13 +486,12 @@ def main():
     concrete_items = parse_excel_rates(concrete_path)
     iron_items = parse_excel_rates(iron_path)
 
-    ew_options = {f"[Earth] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
-    cc_options = {f"[Concrete] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
-    ir_options = {f"[Iron] Item {i['item_no']} - {i['title']}": i for i in iron_items}
+    ew_options = {f"[မြေကျင်း] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
+    cc_options = {f"[ကွန်ကရစ်] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
+    ir_options = {f"[သံချည်သံကွေး] Item {i['item_no']} - {i['title']}": i for i in iron_items}
 
     all_item_maps = {'ew': ew_options, 'cc': cc_options, 'ir': ir_options}
 
-    # Session State များ Initialise ပြုလုပ်ခြင်း
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
     if 'selected_cc' not in st.session_state:
@@ -560,107 +499,111 @@ def main():
     if 'selected_ir' not in st.session_state:
         st.session_state['selected_ir'] = []
 
+    # Show messages if imported
+    if st.session_state.get('last_excel_error'):
+        st.error(st.session_state['last_excel_error'])
+
+    if st.session_state.get('excel_import_success'):
+        st.success(st.session_state['excel_import_success'])
+
     # ==========================================
     # Sidebar Tools: Upload Data, Master Rates & Calc
     # ==========================================
-    st.sidebar.title("🛠️ Tools & Settings")
-    tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Upload Excel", "⚙️ Rates", "🧮 Calc", "🔄 Converter"])
+    st.sidebar.title("🛠️ အရန်ကိရိယာများ")
+    tab_upload, tab_rates, tab_calc, tab_conv = st.sidebar.tabs(["📥 Excel ဖိုင်တင်ရန်", "⚙️ ပစ္စည်း/လုပ်အားခ", "🧮 ဂဏန်းတွက်စက်", "🔄 ယူနစ်ပြောင်းရန်"])
 
     with tab_upload:
-        st.header("📥 Upload Measurement Excel")
-        st.write("အသင့်ပြင်ထားသော Excel တင်လိုက်ပါက Item များနှင့် Measurement များ Auto-Select ဖြစ်သွားပါမည်။")
-
+        st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
         template_buffer = export_measurement_template()
         st.download_button(
-            label="📄 Download Input Template Excel",
+            label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
             data=template_buffer,
             file_name="Measurement_Input_Template.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
         st.divider()
-
-        uploaded_meas_file = st.file_uploader("Excel သို့မဟုတ် CSV ဖိုင် တင်ရန်:", type=["xlsx", "xls", "csv"])
-
-        # Excel ဖိုင်တင်လိုက်ပါက Auto Select & Process လုပ်ဆောင်ရန် Button
+        uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
         if uploaded_meas_file is not None:
-            if st.button("🚀 Auto-Select & Import Items", type="primary"):
+            if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
                 parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
                 st.rerun()
 
     with tab_rates:
-        st.header("Master Unit Rates (MMK)")
+        st.subheader("ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
         
-        st.subheader("👷 Labour Rates")
-        rate_worker = st.number_input("Worker", value=25000.0)
-        rate_digger = st.number_input("Digger", value=25000.0)
-        rate_mason = st.number_input("Mason", value=25000.0)
-        rate_carpenter = st.number_input("Carpenter", value=35000.0)
-        rate_maistry = st.number_input("Maistry", value=30000.0)
-        rate_blacksmith = st.number_input("Blacksmith / Steel Worker", value=28000.0)
-        rate_welder = st.number_input("Welder", value=30000.0)
-        rate_surveyor = st.number_input("Surveyor", value=35000.0)
+        st.markdown("---")
+        st.markdown("**👷 လုပ်အားခ ပေါက်ဈေးများ**")
+        rate_worker = st.number_input("အလုပ်သမား (ကျပ်)", value=25000.0, step=1000.0)
+        rate_digger = st.number_input("မြေကျင်းတူး (ကျပ်)", value=25000.0, step=1000.0)
+        rate_mason = st.number_input("ပန်းရံဆရာ (ကျပ်)", value=25000.0, step=1000.0)
+        rate_carpenter = st.number_input("လက်သမားဆရာ (ကျပ်)", value=35000.0, step=1000.0)
+        rate_maistry = st.number_input("ခေါင်းဆောင် / မေစတရီ (ကျပ်)", value=30000.0, step=1000.0)
+        rate_blacksmith = st.number_input("သံချည်သံကွေးဆရာ (ကျပ်)", value=28000.0, step=1000.0)
+        rate_welder = st.number_input("ဝိန်းဆရာ (ကျပ်)", value=30000.0, step=1000.0)
+        rate_surveyor = st.number_input("တိုင်းတာရေး / Surveyor (ကျပ်)", value=35000.0, step=1000.0)
 
-        st.subheader("🧱 Concrete & Earth Materials")
-        rate_cement = st.number_input("Cement", value=12000.0)
-        rate_sand = st.number_input("Sand", value=45000.0)
-        rate_shingle = st.number_input("River Shingle", value=85000.0)
-        rate_gravel = st.number_input("Gravel", value=60000.0)
-        rate_granite = st.number_input("Granite chipping", value=95000.0)
-        rate_impermo = st.number_input("Impermo", value=3500.0)
-        rate_ironite = st.number_input("Ironite", value=4000.0)
-        rate_timber_scantling = st.number_input("Timber scantling", value=35000.0)
-        rate_timber_planks = st.number_input("Timber planks", value=1200.0)
-        rate_nails = st.number_input("Nails and spikes / Wire Nails", value=3360.0)
+        st.markdown("---")
+        st.markdown("**🧱 ကွန်ကရစ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
+        rate_cement = st.number_input("ဘိလပ်မြေ (၁ အိတ်)", value=12000.0, step=500.0)
+        rate_sand = st.number_input("သဲ (ကျင်း)", value=45000.0, step=1000.0)
+        rate_shingle = st.number_input("မြစ်ကျောက် (ကျင်း)", value=85000.0, step=1000.0)
+        rate_gravel = st.number_input("ကျောက်စုန်း/ကျောက်စိစစ် (ကျင်း)", value=60000.0, step=1000.0)
+        rate_granite = st.number_input("ဂရက်နိုက် ကျောက်စိစစ် (ကျင်း)", value=95000.0, step=1000.0)
+        rate_impermo = st.number_input("Impermo ရေကာဆေး", value=3500.0)
+        rate_ironite = st.number_input("Ironite ဆေး", value=4000.0)
+        rate_timber_scantling = st.number_input("သစ် (Timber scantling)", value=35000.0)
+        rate_timber_planks = st.number_input("သစ်ပျဉ် (Timber planks)", value=1200.0)
+        rate_nails = st.number_input("သံမှို (Nails)", value=3360.0)
 
-        st.subheader("⚙️ Iron & Structural Rates")
-        rate_steel_bar = st.number_input("M.S. Bar / Reinforcement (Ton)", value=2800000.0)
-        rate_binding_wire = st.number_input("Binding Wire (Viss/Ib)", value=6500.0)
-        rate_structural_steel = st.number_input("Structural Steel (Ton)", value=3000000.0)
-        rate_rs_girder = st.number_input("R.S. girder (per cwt)", value=150000.0)
-        rate_carriage = st.number_input("Carriage to site (per cwt)", value=5000.0)
-        rate_hoisting = st.number_input("Hoisting and fixing (per cwt)", value=15000.0)
+        st.markdown("---")
+        st.markdown("**⚙️ သံနှင့် တည်ဆောက်ရေး ပစ္စည်းဈေး**")
+        rate_steel_bar = st.number_input("သံချောင်း/ဘား M.S Bar (၁ တန်)", value=2800000.0, step=10000.0)
+        rate_binding_wire = st.number_input("ဘိုင်းဒင်းဝါယာ/သံဇကာနန်း (ပိဿာ/ပေါင်)", value=6500.0)
+        rate_structural_steel = st.number_input("Structural Steel (၁ တန်)", value=3000000.0)
+        rate_rs_girder = st.number_input("R.S Girder (1 cwt)", value=150000.0)
+        rate_carriage = st.number_input("ဆိုဒ်အရောက် သယ်ယူခ (1 cwt)", value=5000.0)
+        rate_hoisting = st.number_input("အထက်သို့ တင်/ဆင်ခ (1 cwt)", value=15000.0)
 
     with tab_calc:
-        st.subheader("🧮 Quick Calculator")
-        calc_expr = st.text_input("Expression ရိုက်ပါ (e.g. 10*12.5 + 5):", value="")
+        st.subheader("🧮 အလွယ်တွက်စက်")
+        calc_expr = st.text_input("တွက်လိုသည်များကို ရိုက်ထည့်ပါ (ဥပမာ- 10*12.5 + 5):", value="")
         if calc_expr:
             try:
                 allowed_chars = "0123456789+-*/(). "
                 if all(char in allowed_chars for char in calc_expr):
                     res = eval(calc_expr)
-                    st.success(f"**Result = {res:,.4f}**")
+                    st.success(f"**အဖြေ = {res:,.4f}**")
                 else:
-                    st.error("သင်္ချာ ကိန်းဂဏန်းများသာ ရိုက်ထည့်ပါ။")
-            except Exception as e:
-                st.error("တွက်ချက်မှု မမှန်ကန်ပါ။")
+                    st.error("ဂဏန်းနှင့် သင်္ကေတများသာ ရိုက်ထည့်ပါ။")
+            except Exception:
+                st.error("တွက်ချက်မှု အမှားရှိနေပါသည် structure ကို ပြန်စစ်ပါ။")
 
     with tab_conv:
-        st.subheader("🔄 Unit Converter")
-        conv_type = st.selectbox("Convert Type:", [
-            "Inches -> Feet",
-            "Sft <-> Sq.m",
-            "Cft <-> Cu.m",
-            "Steel Weight (Dia -> Kg/Ton)"
+        st.subheader("🔄 ယူနစ် အပြောင်းအလဲ")
+        conv_type = st.selectbox("ပြောင်းလိုသည်ကို ရွေးပါ:", [
+            "လက်မ -> ပေ (Inches -> Feet)",
+            "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)",
+            "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)",
+            "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)"
         ])
 
-        if conv_type == "Inches -> Feet":
-            inch_val = st.number_input("Inches (လက်မ):", min_value=0.0, value=6.0)
-            st.info(f"👉 **{inch_val} inches = {inch_val / 12.0:.3f} ft**")
+        if conv_type == "လက်မ -> ပေ (Inches -> Feet)":
+            inch_val = st.number_input("လက်မ (Inches):", min_value=0.0, value=6.0)
+            st.info(f"👉 **{inch_val} လက်မ = {inch_val / 12.0:.3f} ပေ**")
 
-        elif conv_type == "Sft <-> Sq.m":
-            sft_val = st.number_input("Sft:", min_value=0.0, value=100.0)
+        elif conv_type == "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)":
+            sft_val = st.number_input("စတုရန်းပေ (Sft):", min_value=0.0, value=100.0)
             st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
 
-        elif conv_type == "Cft <-> Cu.m":
-            cft_val = st.number_input("Cft:", min_value=0.0, value=100.0)
+        elif conv_type == "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)":
+            cft_val = st.number_input("ကုဗပေ (Cft):", min_value=0.0, value=100.0)
             st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
 
-        elif conv_type == "Steel Weight (Dia -> Kg/Ton)":
-            bar_dia = st.selectbox("Bar Size:", [
+        elif conv_type == "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)":
+            bar_dia = st.selectbox("သံဆိုဒ် အရွယ်အစား:", [
                 "10 mm (3/8\")", "12 mm (1/2\")", "16 mm (5/8\")", "20 mm (3/4\")", "25 mm (1\")"
             ])
-            length_ft = st.number_input("Total Length (ft):", min_value=0.0, value=100.0)
+            length_ft = st.number_input("စုစုပေါင်း အရှည် (ပေ):", min_value=0.0, value=100.0)
 
             dia_mm_map = {
                 "10 mm (3/8\")": 10,
@@ -674,7 +617,7 @@ def main():
             total_kg = length_ft * wt_kg_per_ft
             total_ton = total_kg / 1000.0
 
-            st.info(f"👉 **Weight = {total_kg:,.2f} Kg ({total_ton:.4f} Ton)**")
+            st.info(f"👉 **အလေးချိန် = {total_kg:,.2f} ကီလိုဂရမ် ({total_ton:.4f} တန်)**")
 
     rate_map = {
         "Worker": rate_worker,
@@ -713,41 +656,42 @@ def main():
     }
 
     # ==========================================
-    # 1. လုပ်ငန်းအမျိုးအစား Checkbox များ
+    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း
     # ==========================================
-    st.subheader("📋 ၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးချယ်ပါ")
+    st.subheader("၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ")
+    
     col_e, col_c, col_i = st.columns(3)
-    show_earthwork = col_e.checkbox("🚜 Earth Work", value=True)
-    show_concrete = col_c.checkbox("🧱 Concrete Work", value=True)
-    show_iron = col_i.checkbox("⚙️ Iron & Steel Work", value=True)
+    show_earthwork = col_e.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=True)
+    show_concrete = col_c.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=True)
+    show_iron = col_i.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=True)
 
     selected_items_list = []
 
     if show_earthwork and earthwork_items:
-        ew_selected = st.multiselect("🚜 Earth Work မှ တွက်မည်များ ရွေးရန်:", list(ew_options.keys()), key="selected_ew")
+        ew_selected = st.multiselect("🚜 မြေကျင်းလုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(ew_options.keys()), key="selected_ew")
         for key in ew_selected:
             selected_items_list.append(ew_options[key])
 
     if show_concrete and concrete_items:
-        cc_selected = st.multiselect("🧱 Concrete Work မှ တွက်မည်များ ရွေးရန်:", list(cc_options.keys()), key="selected_cc")
+        cc_selected = st.multiselect("🧱 ကွန်ကရစ်လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(cc_options.keys()), key="selected_cc")
         for key in cc_selected:
             selected_items_list.append(cc_options[key])
 
     if show_iron and iron_items:
-        ir_selected = st.multiselect("⚙️ Iron & Steel Work မှ တွက်မည်များ ရွေးရန်:", list(ir_options.keys()), key="selected_ir")
+        ir_selected = st.multiselect("⚙️ သံချည်သံကွေးလုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(ir_options.keys()), key="selected_ir")
         for key in ir_selected:
             selected_items_list.append(ir_options[key])
 
     if not selected_items_list:
-        st.info("👉 တွက်ချက်လိုသော Item များကို အထက်တွင် ရွေးချယ်ပေးပါ သို့မဟုတ် Excel ဖိုင် တင်ပြီး '🚀 Auto-Select & Import Items' ကို နှိပ်ပါ။")
+        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် လက်ဝဲဘက် အကွက်မှ Excel ဖိုင် တင်သွင်းပါ။")
         return
 
     st.divider()
 
     # ==========================================
-    # 2. Detail Measurement Sheet Input
+    # အဆင့် (၂) - အတိုင်းအတာများ ရိုက်ထည့်ခြင်း
     # ==========================================
-    st.subheader("📐 ၂။ Detail Measurement Sheet (အတိုင်းအတာများ ရိုက်ထည့်ပါ)")
+    st.subheader("📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)")
 
     item_quantities = {}
     ls_custom_rates = {}
@@ -764,7 +708,7 @@ def main():
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
                 {
-                    "desc": "Section 1",
+                    "desc": "အကွက် ၁",
                     "no": 1,
                     "l": 50.0 if is_sft else 10.0,
                     "b": 50.0 if is_sft else 10.0,
@@ -774,60 +718,63 @@ def main():
                 }
             ]
 
-        with st.expander(f"📌 {idx+1}. Item {item['item_no']} - {item['title']} ({item['unit']})", expanded=True):
+        with st.expander(f"📌 အကြောင်းအရာ ({idx+1}): Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
 
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
-                p_desc = c_desc.text_input("Particular Name", value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
-                no_val = c_no.number_input("Job / Qty", min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
-                ls_rate = c_rate.number_input("Lump Sum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
+                p_desc = c_desc.text_input("လုပ်ငန်းနေရာ / အမျိုးအစား", value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
+                no_val = c_no.number_input("အရေအတွက် (ခု)", min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
+                ls_rate = c_rate.number_input("တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
                 
                 item_total_qty = float(no_val)
                 ls_custom_rates[item_no_str] = ls_rate
 
                 meas_rows.append({
-                    "Particular": p_desc,
-                    "No": no_val,
-                    "L (ft)": "-",
-                    "B (ft)": "-",
-                    "H (ft)": "-",
-                    "Type": "Add",
-                    "Sub-total": no_val
+                    "လုပ်ငန်းနေရာ": p_desc,
+                    "အရေအတွက်": no_val,
+                    "အရှည် (ပေ)": "-",
+                    "အနံ (ပေ)": "-",
+                    "အမြင့် (ပေ)": "-",
+                    "အမျိုးအစား": "အပေါင်း",
+                    "ရလဒ်": no_val
                 })
             else:
                 current_rows = st.session_state[rows_state_key]
                 row_to_copy = None
 
                 for r_idx, r_data in enumerate(current_rows):
+                    st.markdown(f"**🔹 စာကြောင်း ({r_idx+1})**")
+                    
                     if is_sft:
-                        c_desc, c_no, c_l, c_b, c_ded, c_is_ded, c_cp = st.columns([2, 0.8, 0.8, 0.8, 0.8, 1, 0.8])
+                        c_desc, c_no, c_l, c_b = st.columns([2.5, 1, 1, 1])
+                        c_ded, c_is_ded, c_cp = st.columns([1.5, 1.5, 1])
                     elif is_rft:
-                        c_desc, c_no, c_l, c_ded, c_is_ded, c_cp = st.columns([2.5, 0.8, 0.8, 0.8, 1, 0.8])
+                        c_desc, c_no, c_l = st.columns([3, 1, 1])
+                        c_ded, c_is_ded, c_cp = st.columns([1.5, 1.5, 1])
                     else:
-                        c_desc, c_no, c_l, c_b, c_h, c_ded, c_is_ded, c_cp = st.columns([2, 0.8, 0.8, 0.8, 0.8, 0.8, 1, 0.8])
+                        c_desc, c_no, c_l, c_b, c_h = st.columns([2.5, 1, 1, 1, 1])
+                        c_ded, c_is_ded, c_cp = st.columns([1.5, 1.5, 1])
 
                     p_desc = c_desc.text_input(
-                        "Particular Name",
+                        "နေရာ / အကွက်အမည်",
                         value=r_data["desc"],
                         key=f"desc_{idx}_{r_idx}_{item_no_str}"
                     )
-                    no_val = c_no.number_input("No", min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
-                    l_val = c_l.number_input("L (ft)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
+                    no_val = c_no.number_input("အရေအတွက်", min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
+                    l_val = c_l.number_input("အရှည် (ပေ)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
                     
                     b_val = 0.0
                     if not is_rft:
-                        b_val = c_b.number_input("B (ft)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
+                        b_val = c_b.number_input("အနံ (ပေ)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
                     
                     h_val = 0.0
                     if not is_sft and not is_rft:
-                        h_val = c_h.number_input("H (ft)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
+                        h_val = c_h.number_input("အမြင့်/အထူ (ပေ)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
                     
-                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
-
-                    st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
-                    is_ded_row = c_is_ded.checkbox("➖ Deduction Row", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
+                    ded_val = c_ded.number_input("အနှုတ်ကျင်း (Deduction)", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+                    is_ded_row = c_is_ded.checkbox("➖ အနှုတ်လိုင်း ဖြစ်သည်", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
 
                     r_data["desc"] = p_desc
                     r_data["no"] = no_val
@@ -837,7 +784,7 @@ def main():
                     r_data["ded"] = ded_val
                     r_data["is_deduction_row"] = is_ded_row
 
-                    if c_cp.button("📋 Copy", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
+                    if c_cp.button("📋 ပွားမည် (Copy)", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
                         row_to_copy = dict(r_data)
 
                     if is_rft:
@@ -859,15 +806,16 @@ def main():
                         sub_total_display = round(row_qty, 2)
 
                     meas_rows.append({
-                        "Particular": p_desc,
-                        "No": no_val,
-                        "L (ft)": l_val,
-                        "B (ft)": b_val if not is_rft else "-",
-                        "H (ft)": h_val if (not is_sft and not is_rft) else "-",
-                        "Deduction": ded_val,
-                        "Row Type": "➖ Deduction" if is_ded_row else "➕ Addition",
-                        "Sub-total": sub_total_display
+                        "လုပ်ငန်းနေရာ": p_desc,
+                        "အရေအတွက်": no_val,
+                        "အရှည် (ပေ)": l_val,
+                        "အနံ (ပေ)": b_val if not is_rft else "-",
+                        "အမြင့်/အထူ": h_val if (not is_sft and not is_rft) else "-",
+                        "အနှုတ်": ded_val,
+                        "အမျိုးအစား": "➖ အနှုတ်" if is_ded_row else "➕ အပေါင်း",
+                        "ရလဒ်": sub_total_display
                     })
+                    st.markdown("---")
 
                 if row_to_copy is not None:
                     copied_row = dict(row_to_copy)
@@ -875,10 +823,10 @@ def main():
                     st.session_state[rows_state_key].append(copied_row)
                     st.rerun()
 
-                col_add, col_rem, col_blank = st.columns([1, 1, 4])
-                if col_add.button("➕ Add Particular Row", key=f"add_{idx}_{item_no_str}"):
+                col_add, col_rem, _ = st.columns([1.5, 1.5, 3])
+                if col_add.button("➕ အကွက်အသစ်ထည့်ရန်", key=f"add_{idx}_{item_no_str}", type="primary"):
                     st.session_state[rows_state_key].append({
-                        "desc": f"Section {len(st.session_state[rows_state_key]) + 1}",
+                        "desc": f"အကွက် {len(st.session_state[rows_state_key]) + 1}",
                         "no": 1,
                         "l": 50.0 if is_sft else 10.0,
                         "b": 50.0 if is_sft else 10.0,
@@ -888,30 +836,33 @@ def main():
                     })
                     st.rerun()
 
-                if len(st.session_state[rows_state_key]) > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item_no_str}"):
+                if len(st.session_state[rows_state_key]) > 1 and col_rem.button("➖ အကွက်ပြန်ဖြုတ်ရန်", key=f"rem_{idx}_{item_no_str}"):
                     st.session_state[rows_state_key].pop()
                     st.rerun()
 
             item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
+            
+            st.markdown("**📊 အတိုင်းအတာ စာရင်းချုပ် Table**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
-            st.markdown(f"**Total Quantity for Item {item_no_str} = `{item_total_qty:,.2f} {item['unit']}`**")
+            st.success(f"**Item {item_no_str} အတွက် စုစုပေါင်း ပမာဏ = `{item_total_qty:,.2f} {item['unit']}`**")
 
-    # 📥 Download Measurement Sheet Excel (With Formula)
+    # Excel Download
     meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
     st.download_button(
-        label="📥 Download Measurement Sheet (Excel With Formulas)",
+        label="📥 တိုင်းတာချက်များကို Excel ဖိုင်ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
         data=meas_excel_buffer,
         file_name="Detail_Measurement_Sheet_Formulas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
     )
 
     st.divider()
 
     # ==========================================
-    # 3. အစဉ်လိုက် Cost Breakdown & Total Estimate
+    # အဆင့် (၃) - စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်ခြင်း
     # ==========================================
-    st.subheader("📊 ၃။ စုစုပေါင်း Rate Analysis & Cost Estimate")
+    st.subheader("📊 ၃။ စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis & Total)")
 
     grand_total = 0.0
     material_summary = {}
@@ -930,13 +881,12 @@ def main():
         item_total_cost = 0.0
 
         display_rows.append({
-            "Item": item_no,
-            "Particular": item['title'],
-            "Unit": item['unit'],
-            "Quantity": f"{measured_qty:,.2f}",
-            "Rate (MMK)": "",
-            "Per": "",
-            "Amount (MMK)": ""
+            "Item No": item_no,
+            "အကြောင်းအရာ": item['title'],
+            "ယူနစ်": item['unit'],
+            "ပမာဏ": f"{measured_qty:,.2f}",
+            "နှုန်းထား (ကျပ်)": "",
+            "ကျသင့်ငွေ (ကျပ်)": ""
         })
 
         if is_lumpsum and not item['breakdown']:
@@ -945,13 +895,12 @@ def main():
             item_total_cost = amount
 
             display_rows.append({
-                "Item": "",
-                "Particular": f"  └ {item['title']}",
-                "Unit": item['unit'],
-                "Quantity": f"{measured_qty:,.2f}",
-                "Rate (MMK)": f"{ls_rate:,.2f}",
-                "Per": item['unit'],
-                "Amount (MMK)": f"{amount:,.2f}"
+                "Item No": "",
+                "အကြောင်းအရာ": f"  └ {item['title']}",
+                "ယူနစ်": item['unit'],
+                "ပမာဏ": f"{measured_qty:,.2f}",
+                "နှုန်းထား (ကျပ်)": f"{ls_rate:,.2f}",
+                "ကျသင့်ငွေ (ကျပ်)": f"{amount:,.2f}"
             })
 
             labour_summary[item['title']] = {
@@ -1005,42 +954,39 @@ def main():
 
             if mat_breakdown:
                 display_rows.append({
-                    "Item": "", "Particular": "  📦 Material", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
+                    "Item No": "", "အကြောင်းအရာ": "  📦 ပစ္စည်းစရိတ် (Material)", "ယူနစ်": "", "ပမာဏ": "", "နှုန်းထား (ကျပ်)": "", "ကျသင့်ငွေ (ကျပ်)": ""
                 })
                 for m in mat_breakdown:
                     display_rows.append({
-                        "Item": "",
-                        "Particular": f"      {m['part']}",
-                        "Unit": m['unit'],
-                        "Quantity": f"{m['qty']:,.2f}",
-                        "Rate (MMK)": f"{m['rate']:,.2f}" if m['rate'] > 0 else "-",
-                        "Per": m['unit'],
-                        "Amount (MMK)": f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
+                        "Item No": "",
+                        "အကြောင်းအရာ": f"      {m['part']}",
+                        "ယူနစ်": m['unit'],
+                        "ပမာဏ": f"{m['qty']:,.2f}",
+                        "နှုန်းထား (ကျပ်)": f"{m['rate']:,.2f}" if m['rate'] > 0 else "-",
+                        "ကျသင့်ငွေ (ကျပ်)": f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
                     })
 
             if lab_breakdown:
                 display_rows.append({
-                    "Item": "", "Particular": "  👷 Labour", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Per": "", "Amount (MMK)": ""
+                    "Item No": "", "အကြောင်းအရာ": "  👷 လုပ်အားခ (Labour)", "ယူနစ်": "", "ပမာဏ": "", "နှုန်းထား (ကျပ်)": "", "ကျသင့်ငွေ (ကျပ်)": ""
                 })
                 for l in lab_breakdown:
                     display_rows.append({
-                        "Item": "",
-                        "Particular": f"      {l['part']}",
-                        "Unit": l['unit'],
-                        "Quantity": f"{l['qty']:,.2f}",
-                        "Rate (MMK)": f"{l['rate']:,.2f}",
-                        "Per": l['unit'],
-                        "Amount (MMK)": f"{l['amount']:,.2f}"
+                        "Item No": "",
+                        "အကြောင်းအရာ": f"      {l['part']}",
+                        "ယူနစ်": l['unit'],
+                        "ပမာဏ": f"{l['qty']:,.2f}",
+                        "နှုန်းထား (ကျပ်)": f"{l['rate']:,.2f}",
+                        "ကျသင့်ငွေ (ကျပ်)": f"{l['amount']:,.2f}"
                     })
 
         display_rows.append({
-            "Item": "",
-            "Particular": "  💰 Total Cost",
-            "Unit": "",
-            "Quantity": "",
-            "Rate (MMK)": "",
-            "Per": "",
-            "Amount (MMK)": f"**{item_total_cost:,.2f}**"
+            "Item No": "",
+            "အကြောင်းအရာ": "  💰 စုစုပေါင်း ကုန်ကျစရိတ်",
+            "ယူနစ်": "",
+            "ပမာဏ": "",
+            "နှုန်းထား (ကျပ်)": "",
+            "ကျသင့်ငွေ (ကျပ်)": f"**{item_total_cost:,.2f}**"
         })
 
         st.dataframe(pd.DataFrame(display_rows), use_container_width=True, hide_index=True)
@@ -1049,70 +995,71 @@ def main():
     st.divider()
 
     # ==========================================
-    # 4. Detailed Bill of Quantity (BOQ Breakdown)
+    # အဆင့် (၄) - BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်
     # ==========================================
-    st.subheader("📜 ၄။ Detailed Bill Of Quantity (BOQ Summary)")
+    st.subheader("📜 ၄။ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ် (BOQ Summary)")
 
     # Material Section
-    st.markdown("### 📦 Material Cost Breakdown")
+    st.markdown("### 📦 ၁။ ပစ္စည်းကုန်ကျစရိတ် စာရင်း (Material Summary)")
     mat_rows = []
     total_mat_cost = 0.0
     for idx, (p_name, data) in enumerate(material_summary.items(), start=1):
         mat_rows.append({
-            "No.": idx,
-            "Particular": p_name,
-            "Unit": data["unit"],
-            "Quantity": f"{data['qty']:,.2f}",
-            "Rate (MMK)": f"{data['rate']:,.2f}",
-            "Amount (MMK)": f"{data['amount']:,.2f}"
+            "စဉ်": idx,
+            "ပစ္စည်းအမည်": p_name,
+            "ယူနစ်": data["unit"],
+            "လိုအပ်သော ပမာဏ": f"{data['qty']:,.2f}",
+            "နှုန်းထား (ကျပ်)": f"{data['rate']:,.2f}",
+            "စုစုပေါင်း (ကျပ်)": f"{data['amount']:,.2f}"
         })
         total_mat_cost += data["amount"]
 
     if mat_rows:
         st.table(pd.DataFrame(mat_rows))
     else:
-        st.info("Material စရိတ် မရှိပါ။")
-    st.markdown(f"**Total Material Cost = `{total_mat_cost:,.2f} MMK`**")
+        st.info("ပစ္စည်းစရိတ် မရှိပါ။")
+    st.info(f"👉 **စုစုပေါင်း ပစ္စည်းစရိတ် = `{total_mat_cost:,.2f} ကျပ်`**")
 
     st.divider()
 
     # Labour Section
-    st.markdown("### 👷 Labour Cost Breakdown")
+    st.markdown("### 👷 ၂။ လုပ်အားခ စာရင်း (Labour Summary)")
     lab_rows = []
     total_lab_cost = 0.0
     for idx, (p_name, data) in enumerate(labour_summary.items(), start=1):
         lab_rows.append({
-            "No.": idx,
-            "Particular": p_name,
-            "Unit": data["unit"],
-            "Quantity": f"{data['qty']:,.2f}",
-            "Rate (MMK)": f"{data['rate']:,.2f}",
-            "Amount (MMK)": f"{data['amount']:,.2f}"
+            "စဉ်": idx,
+            "အမျိုးအစား": p_name,
+            "ယူနစ်": data["unit"],
+            "ပမာဏ": f"{data['qty']:,.2f}",
+            "နှုန်းထား (ကျပ်)": f"{data['rate']:,.2f}",
+            "စုစုပေါင်း (ကျပ်)": f"{data['amount']:,.2f}"
         })
         total_lab_cost += data["amount"]
 
     if lab_rows:
         st.table(pd.DataFrame(lab_rows))
     else:
-        st.info("Labour စရိတ် မရှိပါ။")
-    st.markdown(f"**Total Labour Cost = `{total_lab_cost:,.2f} MMK`**")
+        st.info("လုပ်အားခ စရိတ် မရှိပါ။")
+    st.info(f"👉 **စုစုပေါင်း လုပ်အားခ = `{total_lab_cost:,.2f} ကျပ်`**")
 
-    # 📥 Download BOQ Summary Excel Button (With Formulas)
+    # BOQ Download
     boq_excel_buffer = export_boq_summary_excel(material_summary, labour_summary)
     st.download_button(
-        label="📥 Download BOQ Material & Labour Summary (Excel With Formulas)",
+        label="📥 BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
         data=boq_excel_buffer,
         file_name="BOQ_Summary_Formulas.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
     )
 
     st.divider()
 
     # Grand Totals Summary Box
     col_m1, col_m2, col_m3 = st.columns(3)
-    col_m1.metric("📦 Total Material Cost", f"{total_mat_cost:,.2f} MMK")
-    col_m2.metric("👷 Total Labour Cost", f"{total_lab_cost:,.2f} MMK")
-    col_m3.metric("💰 Grand Total Cost", f"{grand_total:,.2f} MMK")
+    col_m1.metric("📦 စုစုပေါင်း ပစ္စည်းဖိုး", f"{total_mat_cost:,.2f} ကျပ်")
+    col_m2.metric("👷 စုစုပေါင်း လုပ်အားခ", f"{total_lab_cost:,.2f} ကျပ်")
+    col_m3.metric("💰 ပရောဂျက် စုစုပေါင်းစရိတ်", f"{grand_total:,.2f} ကျပ်")
 
 
 if __name__ == "__main__":
