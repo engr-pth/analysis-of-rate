@@ -153,7 +153,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
 
         full_text_str = " ".join([str(x) for x in df_raw.values.flatten() if pd.notna(x)]).lower()
 
-        selected_ew, selected_cc, selected_ir, selected_rc, selected_rc_m = [], [], [], [], []
+        selected_ew, selected_cc, selected_ir, selected_rc, selected_rc_m, selected_bw = [], [], [], [], [], []
 
         if 'ew' in all_item_maps:
             for k, v in all_item_maps['ew'].items():
@@ -189,15 +189,23 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     if any(kw in full_text_str for kw in ['reinforced', 'r.c.c', 'rcc', 'machine', 'mixer']):
                         selected_rc_m.append(k)
 
+        if 'bw' in all_item_maps:
+            for k, v in all_item_maps['bw'].items():
+                item_no_str = clean_str_item(v.get('item_no', ''))
+                if item_no_str in excel_item_nos:
+                    if any(kw in full_text_str for kw in ['brick', 'brickwork', 'brick work', 'masonry', 'အုတ်']):
+                        selected_bw.append(k)
+
         st.session_state['selected_ew'] = selected_ew
         st.session_state['selected_cc'] = selected_cc
         st.session_state['selected_ir'] = selected_ir
         st.session_state['selected_rc'] = selected_rc
         st.session_state['selected_rc_m'] = selected_rc_m
+        st.session_state['selected_bw'] = selected_bw
 
-        all_selected_keys = selected_ew + selected_cc + selected_ir + selected_rc + selected_rc_m
+        all_selected_keys = selected_ew + selected_cc + selected_ir + selected_rc + selected_rc_m + selected_bw
         all_items_flat = []
-        for cat in ['ew', 'cc', 'ir', 'rc', 'rc_m']:
+        for cat in ['ew', 'cc', 'ir', 'rc', 'rc_m', 'bw']:
             if cat in all_item_maps:
                 for k, item in all_item_maps[cat].items():
                     if k in all_selected_keys:
@@ -542,25 +550,29 @@ def main():
     iron_path = os.path.join(BASE_DIR, "3 Iron and Steel work.xls")
     rc_path = os.path.join(BASE_DIR, "4.1 Reinforced concrete ( Hand mixed ).xls")
     rc_machine_path = os.path.join(BASE_DIR, "4.2 Reinforced concrete ( mixed by machine ).xls")
+    brickwork_path = os.path.join(BASE_DIR, "5 Brick work.xls")
 
     earthwork_items = parse_excel_rates(earthwork_path)
     concrete_items = parse_excel_rates(concrete_path)
     iron_items = parse_excel_rates(iron_path)
     rc_items = parse_excel_rates(rc_path)
     rc_machine_items = parse_excel_rates(rc_machine_path)
+    brickwork_items = parse_excel_rates(brickwork_path)
 
     ew_options = {f"[မြေကျင်း] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
     cc_options = {f"[ကွန်ကရစ်] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
     ir_options = {f"[သံချည်သံကွေး] Item {i['item_no']} - {i['title']}": i for i in iron_items}
     rc_options = {f"[သံကွန်ကရစ် (လက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_items}
     rc_m_options = {f"[သံကွန်ကရစ် (စက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_machine_items}
+    bw_options = {f"[အုတ်စီအုတ်ကိုင်] Item {i['item_no']} - {i['title']}": i for i in brickwork_items}
 
     all_item_maps = {
         'ew': ew_options, 
         'cc': cc_options, 
         'ir': ir_options, 
         'rc': rc_options,
-        'rc_m': rc_m_options
+        'rc_m': rc_m_options,
+        'bw': bw_options
     }
 
     if 'selected_ew' not in st.session_state:
@@ -573,6 +585,8 @@ def main():
         st.session_state['selected_rc'] = []
     if 'selected_rc_m' not in st.session_state:
         st.session_state['selected_rc_m'] = []
+    if 'selected_bw' not in st.session_state:
+        st.session_state['selected_bw'] = []
 
     # Messages
     if st.session_state.get('last_excel_error'):
@@ -609,7 +623,8 @@ def main():
                 rate_surveyor = st.number_input("တိုင်းတာရေး / Surveyor (ကျပ်)", value=35000.0, step=1000.0)
 
             with col_r2:
-                st.markdown("**🧱 ကွန်ကရစ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
+                st.markdown("**🧱 ကွန်ကရစ်၊ အုတ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
+                rate_brick = st.number_input("အုတ် (၁ လုံး)", value=200.0, step=10.0)
                 rate_cement = st.number_input("ဘိလပ်မြေ (၁ အိတ်)", value=12000.0, step=500.0)
                 rate_sand = st.number_input("သဲ (ကျင်း)", value=45000.0, step=1000.0)
                 rate_shingle = st.number_input("မြစ်ကျောက် (ကျင်း)", value=85000.0, step=1000.0)
@@ -711,6 +726,7 @@ def main():
     rate_welder = locals().get('rate_welder', 30000.0)
     rate_surveyor = locals().get('rate_surveyor', 35000.0)
 
+    rate_brick = locals().get('rate_brick', 200.0)
     rate_cement = locals().get('rate_cement', 12000.0)
     rate_sand = locals().get('rate_sand', 45000.0)
     rate_shingle = locals().get('rate_shingle', 85000.0)
@@ -742,6 +758,11 @@ def main():
         "Steel worker": rate_blacksmith,
         "Welder": rate_welder,
         "Surveyor": rate_surveyor,
+        "Bricks": rate_brick,
+        "Brick": rate_brick,
+        "1st class bricks": rate_brick,
+        "First class bricks": rate_brick,
+        "Best burnt bricks": rate_brick,
         "Cement": rate_cement,
         "Sand": rate_sand,
         "River Shingle (1-1/2\" gauge)": rate_shingle,
@@ -781,7 +802,7 @@ def main():
     # ==========================================
     st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ</div>', unsafe_allow_html=True)
     
-    col_e, col_c, col_i, col_rc, col_rc_m = st.columns(5)
+    col_e, col_c, col_i, col_rc, col_rc_m, col_bw = st.columns(6)
     with col_e:
         show_earthwork = st.checkbox("🚜 မြေကျင်းလုပ်ငန်း", value=False)
     with col_c:
@@ -792,6 +813,8 @@ def main():
         show_rc = st.checkbox("🏗️ သံကွန်ကရစ် (လက်စပ်)", value=False)
     with col_rc_m:
         show_rc_m = st.checkbox("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်)", value=False)
+    with col_bw:
+        show_brickwork = st.checkbox("🧱 အုတ်စီအုတ်ကိုင်", value=False)
 
     selected_items_list = []
 
@@ -819,6 +842,11 @@ def main():
         rc_m_selected = st.multiselect("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်) လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_m_options.keys()), key="selected_rc_m")
         for key in rc_m_selected:
             selected_items_list.append(rc_m_options[key])
+
+    if show_brickwork and brickwork_items:
+        bw_selected = st.multiselect("🧱 အုတ်စီအုတ်ကိုင်လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(bw_options.keys()), key="selected_bw")
+        for key in bw_selected:
+            selected_items_list.append(bw_options[key])
 
     if not selected_items_list:
         st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် အထက်ပါ Excel Upload အကွက်မှ ဖိုင် တင်သွင်းပါ။")
