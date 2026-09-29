@@ -1083,21 +1083,20 @@ def main():
             except (ValueError, TypeError):
                 std_base_qty = 100.0
 
-            # std_base_qty 0 (သို့မဟုတ်) 0 ထက် ငယ်/ဗလာ ဖြစ်နေပါက 0 နှင့် စားမိသည့် Error မတက်စေရန် စစ်ဆေးခြင်း
-            if std_base_qty <= 0:
-                req_qty = std_qty * measured_qty
-            else:
-                req_qty = (std_qty / std_base_qty) * measured_qty
-
             mat_breakdown = []
             lab_breakdown = []
 
             for row in item['breakdown']:
                 part = row['particular']
-                std_qty = row['qty']
+                std_qty = row['qty']        # <--- std_qty ကို ဤနေရာတွင် ဦးစွာ သတ်မှတ်ပါ
                 u = row['unit']
 
-                req_qty = (std_qty / std_base_qty) * measured_qty
+                # std_base_qty 0 ဖြစ်နေပါက 0 နှင့် စားမိသည့် ZeroDivisionError မတက်စေရန် စစ်ဆေးခြင်း
+                if std_base_qty <= 0:
+                    req_qty = std_qty * measured_qty
+                else:
+                    req_qty = (std_qty / std_base_qty) * measured_qty
+
                 unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
                 item_total_cost += amount
