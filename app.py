@@ -1083,6 +1083,12 @@ def main():
             except (ValueError, TypeError):
                 std_base_qty = 100.0
 
+            # std_base_qty 0 (သို့မဟုတ်) 0 ထက် ငယ်/ဗလာ ဖြစ်နေပါက 0 နှင့် စားမိသည့် Error မတက်စေရန် စစ်ဆေးခြင်း
+            if std_base_qty <= 0:
+                req_qty = std_qty * measured_qty
+            else:
+                req_qty = (std_qty / std_base_qty) * measured_qty
+
             mat_breakdown = []
             lab_breakdown = []
 
