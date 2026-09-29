@@ -153,7 +153,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
 
         full_text_str = " ".join([str(x) for x in df_raw.values.flatten() if pd.notna(x)]).lower()
 
-        selected_ew, selected_cc, selected_ir, selected_rc = [], [], [], []
+        selected_ew, selected_cc, selected_ir, selected_rc, selected_rc_m = [], [], [], [], []
 
         if 'ew' in all_item_maps:
             for k, v in all_item_maps['ew'].items():
@@ -182,14 +182,22 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     if any(kw in full_text_str for kw in ['reinforced', 'r.c.c', 'rcc', 'pipe', 'post']):
                         selected_rc.append(k)
 
+        if 'rc_m' in all_item_maps:
+            for k, v in all_item_maps['rc_m'].items():
+                item_no_str = clean_str_item(v.get('item_no', ''))
+                if item_no_str in excel_item_nos:
+                    if any(kw in full_text_str for kw in ['reinforced', 'r.c.c', 'rcc', 'machine', 'mixer']):
+                        selected_rc_m.append(k)
+
         st.session_state['selected_ew'] = selected_ew
         st.session_state['selected_cc'] = selected_cc
         st.session_state['selected_ir'] = selected_ir
         st.session_state['selected_rc'] = selected_rc
+        st.session_state['selected_rc_m'] = selected_rc_m
 
-        all_selected_keys = selected_ew + selected_cc + selected_ir + selected_rc
+        all_selected_keys = selected_ew + selected_cc + selected_ir + selected_rc + selected_rc_m
         all_items_flat = []
-        for cat in ['ew', 'cc', 'ir', 'rc']:
+        for cat in ['ew', 'cc', 'ir', 'rc', 'rc_m']:
             if cat in all_item_maps:
                 for k, item in all_item_maps[cat].items():
                     if k in all_selected_keys:
@@ -520,7 +528,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Modern Header Banner (Mobile App Banner Look)
+    # Modern Header Banner
     st.markdown("""
         <div class="main-header">
             <h1>🏗️ Civil Calculation & QS Tool</h1>
@@ -533,18 +541,27 @@ def main():
     concrete_path = os.path.join(BASE_DIR, "2 Concrete ( Hand mixed ).xls")
     iron_path = os.path.join(BASE_DIR, "3 Iron and Steel work.xls")
     rc_path = os.path.join(BASE_DIR, "4.1 Reinforced concrete ( Hand mixed ).xls")
+    rc_machine_path = os.path.join(BASE_DIR, "4.2 Reinforced concrete ( mixed by machine ).xls")
 
     earthwork_items = parse_excel_rates(earthwork_path)
     concrete_items = parse_excel_rates(concrete_path)
     iron_items = parse_excel_rates(iron_path)
     rc_items = parse_excel_rates(rc_path)
+    rc_machine_items = parse_excel_rates(rc_machine_path)
 
     ew_options = {f"[မြေကျင်း] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
     cc_options = {f"[ကွန်ကရစ်] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
     ir_options = {f"[သံချည်သံကွေး] Item {i['item_no']} - {i['title']}": i for i in iron_items}
-    rc_options = {f"[သံကွန်ကရစ်] Item {i['item_no']} - {i['title']}": i for i in rc_items}
+    rc_options = {f"[သံကွန်ကရစ် (လက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_items}
+    rc_m_options = {f"[သံကွန်ကရစ် (စက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_machine_items}
 
-    all_item_maps = {'ew': ew_options, 'cc': cc_options, 'ir': ir_options, 'rc': rc_options}
+    all_item_maps = {
+        'ew': ew_options, 
+        'cc': cc_options, 
+        'ir': ir_options, 
+        'rc': rc_options,
+        'rc_m': rc_m_options
+    }
 
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
@@ -554,6 +571,8 @@ def main():
         st.session_state['selected_ir'] = []
     if 'selected_rc' not in st.session_state:
         st.session_state['selected_rc'] = []
+    if 'selected_rc_m' not in st.session_state:
+        st.session_state['selected_rc_m'] = []
 
     # Messages
     if st.session_state.get('last_excel_error'):
@@ -563,7 +582,7 @@ def main():
         st.success(st.session_state['excel_import_success'])
 
     # ==========================================
-    # Main Page Tools (Sidebar အစား Main UI တွင် ထည့်သွင်းထားခြင်း)
+    # Main Page Tools
     # ==========================================
     with st.expander("🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)", expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
@@ -682,7 +701,7 @@ def main():
                     parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
                     st.rerun()
 
-    # Fallback Values for Rates if tab_rates is not opened
+    # Fallback Values for Rates
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
     rate_mason = locals().get('rate_mason', 25000.0)
@@ -762,15 +781,17 @@ def main():
     # ==========================================
     st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ</div>', unsafe_allow_html=True)
     
-    col_e, col_c, col_i, col_rc = st.columns(4)
+    col_e, col_c, col_i, col_rc, col_rc_m = st.columns(5)
     with col_e:
-        show_earthwork = st.checkbox("🚜 မြေကျင်း / မြေလုပ်ငန်း", value=False)
+        show_earthwork = st.checkbox("🚜 မြေကျင်းလုပ်ငန်း", value=False)
     with col_c:
-        show_concrete = st.checkbox("🧱 ကွန်ကရစ် လုပ်ငန်း", value=False)
+        show_concrete = st.checkbox("🧱 ကွန်ကရစ်လုပ်ငန်း", value=False)
     with col_i:
-        show_iron = st.checkbox("⚙️ သံချည်သံကွေး / သံထည်", value=False)
+        show_iron = st.checkbox("⚙️ သံချည်သံကွေး", value=False)
     with col_rc:
-        show_rc = st.checkbox("🏗️ သံကွန်ကရစ် လုပ်ငန်း", value=False)
+        show_rc = st.checkbox("🏗️ သံကွန်ကရစ် (လက်စပ်)", value=False)
+    with col_rc_m:
+        show_rc_m = st.checkbox("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်)", value=False)
 
     selected_items_list = []
 
@@ -790,9 +811,14 @@ def main():
             selected_items_list.append(ir_options[key])
 
     if show_rc and rc_items:
-        rc_selected = st.multiselect("🏗️ သံကွန်ကရစ်လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_options.keys()), key="selected_rc")
+        rc_selected = st.multiselect("🏗️ သံကွန်ကရစ် (လက်စပ်) လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_options.keys()), key="selected_rc")
         for key in rc_selected:
             selected_items_list.append(rc_options[key])
+
+    if show_rc_m and rc_machine_items:
+        rc_m_selected = st.multiselect("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်) လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_m_options.keys()), key="selected_rc_m")
+        for key in rc_m_selected:
+            selected_items_list.append(rc_m_options[key])
 
     if not selected_items_list:
         st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် အထက်ပါ Excel Upload အကွက်မှ ဖိုင် တင်သွင်းပါ။")
@@ -958,7 +984,6 @@ def main():
             st.markdown("**📊 တိုင်းတာချက် စာရင်းချုပ်**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             
-            # Result Badge
             st.info(f"💡 **Item {item_no_str} စုစုပေါင်း = `{item_total_qty:,.2f} {item['unit']}`**")
 
     # Excel Download Button
