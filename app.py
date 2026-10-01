@@ -64,7 +64,7 @@ TRANSLATIONS = {
         "lumpsum_rate": "တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)",
         "len_ft": "အရှည် L (ပေ)",
         "wid_ft": "အနံ B (ပေ)",
-        "hei_ft": "အမြင့်/အနက် H (ပေ)",
+        "hei_ft": "အမြင့်/အထူ H (ပေ)",
         "deduction": "အနှုတ်ကျင်း (Deduction)",
         "is_deduction_row": "➖ အနှုတ်လိုင်း ဖြစ်သည်",
         "btn_copy": "📋 ပွားမည် (Copy)",
@@ -142,7 +142,7 @@ TRANSLATIONS = {
         "lumpsum_rate": "Lumpsum Rate (MMK)",
         "len_ft": "Length L (ft)",
         "wid_ft": "Breadth B (ft)",
-        "hei_ft": "Height/Depth H (ft)",
+        "hei_ft": "Height/Thickness H (ft)",
         "deduction": "Deduction",
         "is_deduction_row": "➖ Deduction Row",
         "btn_copy": "📋 Copy",
@@ -196,6 +196,10 @@ def parse_excel_rates(file_path):
         particular = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ''
         unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
         qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
+
+        # Filter out Item 10 & Item 11 since depth and lead extra are handled dynamically
+        if item_no in ['10', '10.0', '11', '11.0']:
+            continue
 
         if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
             if current_item and particular not in ['', 'nan', 'NaN', 'Particular']:
@@ -392,8 +396,7 @@ def export_measurement_template():
 
     sample_data = [
         ["2", "Excavation Grid A-1", 2, 10, 5, 8, 0, "Addition"],
-        ["3", "Column Box Hole Deduction", 1, 2, 2, 6, 0, "Deduction"],
-        ["4", "Backfilling Work", 1, 50, 120, 2, 0, "Addition"],
+        ["3", "Foundation Hole Grid B", 1, 20, 150, 6, 0, "Addition"],
     ]
 
     for row_idx, row_vals in enumerate(sample_data, start=2):
@@ -579,6 +582,7 @@ def main():
         page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
     )
 
+    # Top Language Selector (Main UI Area - No Sidebar)
     col_title_space, col_lang = st.columns([4, 1])
     with col_lang:
         lang_choice = st.radio(
@@ -591,6 +595,7 @@ def main():
     lang = "MM" if lang_choice == "မြန်မာ" else "EN"
     t = TRANSLATIONS[lang]
 
+    # CSS Customizations
     st.markdown("""
         <style>
             .main-header {
@@ -635,6 +640,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
+    # Banner
     st.markdown(f"""
         <div class="main-header">
             <h1>{t['title']}</h1>
@@ -642,6 +648,7 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
+    # Load Earthwork Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
@@ -657,6 +664,7 @@ def main():
     if st.session_state.get('excel_import_success'):
         st.success(st.session_state['excel_import_success'])
 
+    # Tools
     with st.expander(t['tools_title'], expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             t['tab_rates'], 
@@ -740,6 +748,7 @@ def main():
                     parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
                     st.rerun()
 
+    # Rate Fallbacks & Mapping
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
     rate_maistry = locals().get('rate_maistry', 30000.0)
@@ -788,7 +797,6 @@ def main():
     st.markdown(f'<div class="section-title">{t["sec2_title"]}</div>', unsafe_allow_html=True)
 
     item_quantities = {}
-    item_extra_workers = {}  # Store calculated extra workers per item for Item 10 and Item 11
     ls_custom_rates = {}
 
     for idx, item in enumerate(selected_items_list):
@@ -817,7 +825,6 @@ def main():
         with st.expander(f"📌 Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
-            total_extra_worker_units = 0.0  # Extra workers per 100 Cft
 
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
@@ -900,20 +907,6 @@ def main():
 
                     row_qty = max(0.0, gross_qty - ded_val)
 
-                    # Dynamic Extra Depth & Lead Calculation for Item 2, 3, 4
-                    if item_no_str in ["2", "3", "4"] and not is_ded_row and row_qty > 0:
-                        # Item 10 logic: Every additional 5 ft depth -> +0.5 worker per 100 Cft
-                        depth_extra_steps = max(0, math.ceil((h_val - 5.0) / 5.0)) if h_val > 5.0 else 0
-                        extra_worker_depth = depth_extra_steps * 0.5
-
-                        # Item 11 logic: Every additional 100 ft lead (L or B) -> +0.5 worker per 100 Cft
-                        max_lead = max(l_val, b_val)
-                        lead_extra_steps = max(0, math.ceil((max_lead - 100.0) / 100.0)) if max_lead > 100.0 else 0
-                        extra_worker_lead = lead_extra_steps * 0.5
-
-                        # Total extra worker rate per 100 cft for this row
-                        total_extra_worker_units += (extra_worker_depth + extra_worker_lead) * (row_qty / 100.0)
-
                     if is_ded_row:
                         item_total_qty -= row_qty
                         sub_total_display = -round(row_qty, 2)
@@ -958,7 +951,6 @@ def main():
 
             item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
-            item_extra_workers[item_no_str] = total_extra_worker_units
             
             st.markdown(f"**{t['total_summary']}**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
@@ -1035,6 +1027,39 @@ def main():
             mat_breakdown = []
             lab_breakdown = []
 
+            # Calculate Extra Depth & Extra Lead Workers for Item 2, 3, 4
+            extra_worker_depth = 0.0
+            extra_worker_lead = 0.0
+
+            if item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
+                rows_state_key = f"rows_data_{item_no}_{idx}"
+                current_rows = st.session_state.get(rows_state_key, [])
+
+                for r in current_rows:
+                    if r.get('is_deduction_row'):
+                        continue
+                    
+                    no_val = float(r.get('no', 1))
+                    l_val = float(r.get('l', 0.0))
+                    b_val = float(r.get('b', 0.0))
+                    h_val = float(r.get('h', 0.0))
+                    ded_val = float(r.get('ded', 0.0))
+
+                    row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
+
+                    # 1. Depth extra: 5 ft ထက် ပိုပါက ပိုသည့် ၅ ပေတိုင်းအတွက် 100 cft လျှင် 0.5 ယောက်
+                    if h_val > 5.0:
+                        extra_h = h_val - 5.0
+                        depth_steps = math.ceil(extra_h / 5.0)
+                        extra_worker_depth += depth_steps * 0.5 * (row_cft / 100.0)
+
+                    # 2. Lead extra: L သို့မဟုတ် B ၁၀၀ ပေ ထက် ပိုပါက ပိုသည့် ပေ ၁၀၀ တိုင်းအတွက် 100 cft လျှင် 0.5 ယောက်
+                    max_dist = max(l_val, b_val)
+                    if max_dist > 100.0:
+                        extra_dist = max_dist - 100.0
+                        lead_steps = math.ceil(extra_dist / 100.0)
+                        extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
+
             for row in item['breakdown']:
                 part = row['particular']
                 std_qty = row['qty']
@@ -1045,10 +1070,10 @@ def main():
                 else:
                     req_qty = (std_qty / std_base_qty) * measured_qty
 
-                # Merge Item 10 & Item 11 Extra Workers directly into Worker quantity
-                if item_no in ["2", "3", "4"] and part.lower().strip() == "worker":
-                    extra_workers_qty = item_extra_workers.get(item_no, 0.0)
-                    req_qty += extra_workers_qty
+                # Add Extra Workers to 'Worker' or 'Digger'
+                part_lower = part.lower()
+                if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
+                    req_qty += (extra_worker_depth + extra_worker_lead)
 
                 # Handle Water Charges as Lumpsum (L-s) logic
                 u_str = str(u).lower().strip()
@@ -1059,7 +1084,6 @@ def main():
                 amount = req_qty * unit_rate
                 item_total_cost += amount
 
-                part_lower = part.lower()
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
                 row_data = {
