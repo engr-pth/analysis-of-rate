@@ -10,7 +10,7 @@ from openpyxl.utils import get_column_letter
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Labour/Worker Keywords List (Water Charges ကို Material ဘက်ရောက်စေရန် "charges" ကို ဖြုတ်ထားပါသည်)
+# Labour/Worker Keywords List
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
@@ -18,7 +18,38 @@ LABOUR_KEYWORDS = [
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
-# Multi-language dictionary
+# Material & Labour Names Translation Dictionary
+ITEM_NAMES = {
+    "Sundries": {"MM": "အထွေထွေသုံး ပစ္စည်းများ", "EN": "Sundries"},
+    "Water Charges": {"MM": "ရေဖိုးရေခ", "EN": "Water Charges"},
+    "Sand": {"MM": "သဲဖို့", "EN": "Sand"},
+    "Timber": {"MM": "သစ်", "EN": "Timber"},
+    "Wire Nails": {"MM": "သံရိုက်", "EN": "Wire Nails"},
+    "Carriage to site": {"MM": "မြေ/သဲ သယ်ယူခ", "EN": "Carriage to site"},
+    "Site clearing including cutting trees and bushes and dressing": {
+        "MM": "သစ်ပင် ချုံနွယ်များ ခုတ်ထွင်ရှင်းလင်းခြင်းနှင့် မြေညှိခြင်း",
+        "EN": "Site clearing including cutting trees and bushes and dressing"
+    },
+    "Worker": {"MM": "အလုပ်သမား", "EN": "Worker"},
+    "Worker for carrying and ramming": {"MM": "မြေ/သဲ သယ်ယူခင်းကျင်း ဖိသိပ် အလုပ်သမား", "EN": "Worker for carrying and ramming"},
+    "Worker for watering": {"MM": "ရေဖျန်း အလုပ်သမား", "EN": "Worker for watering"},
+    "Worker for carrying": {"MM": "မြေသယ် အလုပ်သမား", "EN": "Worker for carrying"},
+    "Maistry": {"MM": "ခေါင်းဆောင် / မေစတရီ", "EN": "Maistry"},
+    "Digger": {"MM": "မြေကျင်းတူး အလုပ်သမား", "EN": "Digger"},
+    "Surveyor": {"MM": "တိုင်းတာရေးမှူး / Surveyor", "EN": "Surveyor"},
+    "Carpenter": {"MM": "လက်သမား / Carpenter", "EN": "Carpenter"},
+}
+
+# Earthwork Core Items Translation
+ITEM_TITLES = {
+    "1": {"MM": "မြေပြင်ရှင်းလင်းခြင်း လုပ်ငန်း", "EN": "Site clearing and leveling work"},
+    "2": {"MM": "အုတ်မြစ်/တိုင်ကျင်း မြေကျင်းတူးခြင်း (အနက် ၅ ပေ အထိ)", "EN": "Excavation for foundations (Up to 5 ft depth)"},
+    "3": {"MM": "မြေကျင်း တူးဖောက်ခြင်း (ကျင်းကြီးများ)", "EN": "Excavation in trenches and pits"},
+    "4": {"MM": "မြေကျင်း ပြန်ဖို့ခြင်းနှင့် ဖိသိပ်ခြင်း", "EN": "Backfilling and ramming earth"},
+    "23": {"MM": "အုတ်မြစ်ပြင်ဆင်ရန် တိုင်ငုတ်စိုက်ခြင်း လုပ်ငန်း", "EN": "Staking works for preparation of foundation"}
+}
+
+# Multi-language UI dictionary
 TRANSLATIONS = {
     "MM": {
         "title": "🚜 Earthwork QS & Calculation Tool",
@@ -97,13 +128,16 @@ TRANSLATIONS = {
         "grand_total_val": "💰 မြေကျင်းလုပ်ငန်း စုစုပေါင်းစရိတ်",
         "type_add": "➕ အပေါင်း",
         "type_ded": "➖ အနှုတ်",
-        "item_no_col": "Item No"
+        "item_no_col": "Item No",
+        "mat_cost_sec": "📦 ပစ္စည်းစရိတ် (Material)",
+        "lab_cost_sec": "👷 လုပ်အားခ (Labour)",
+        "total_cost_sec": "💰 စုစုပေါင်း ကုန်ကျစရိတ်"
     },
     "EN": {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork excavation and backfilling.",
         "tools_title": "🛠️ Tools & Unit Rates Configuration",
-        "tab_rates": "⚙️️ Material/Labour Rates",
+        "tab_rates": "⚙ Material/Labour Rates",
         "tab_calc": "🧮 Calculator",
         "tab_conv": "🔄 Unit Converter",
         "tab_upload": "📥 Import Excel",
@@ -176,9 +210,25 @@ TRANSLATIONS = {
         "grand_total_val": "💰 Total Earthwork Cost",
         "type_add": "➕ Addition",
         "type_ded": "➖ Deduction",
-        "item_no_col": "Item No"
+        "item_no_col": "Item No",
+        "mat_cost_sec": "📦 Material Cost",
+        "lab_cost_sec": "👷 Labour Cost",
+        "total_cost_sec": "💰 Total Item Cost"
     }
 }
+
+def get_translated_name(name_key, lang):
+    """ Helper to get translated name for materials and labour items """
+    if name_key in ITEM_NAMES and lang in ITEM_NAMES[name_key]:
+        return ITEM_NAMES[name_key][lang]
+    return name_key
+
+def get_translated_item_title(item_no, default_title, lang):
+    """ Helper to get item title in Myanmar or English """
+    clean_no = str(item_no).replace('.0', '').strip()
+    if clean_no in ITEM_TITLES and lang in ITEM_TITLES[clean_no]:
+        return ITEM_TITLES[clean_no][lang]
+    return default_title
 
 @st.cache_data
 def parse_excel_rates(file_path):
@@ -199,7 +249,6 @@ def parse_excel_rates(file_path):
         unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
         qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
 
-        # Filter out Item 10 & Item 11 since depth and lead extra are handled dynamically
         if item_no in ['10', '10.0', '11', '11.0']:
             continue
 
@@ -416,7 +465,7 @@ def export_measurement_template():
     return buffer
 
 
-def export_measurement_sheet_excel(selected_items_list, st_session_state):
+def export_measurement_sheet_excel(selected_items_list, st_session_state, lang="MM"):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Earthwork Measurement"
@@ -433,6 +482,7 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
 
     for idx, item in enumerate(selected_items_list):
         item_no_str = str(item['item_no'])
+        item_title = get_translated_item_title(item_no_str, item['title'], lang)
         rows_state_key = f"rows_data_{item_no_str}_{idx}"
 
         unit_str = str(item['unit']).lower().strip()
@@ -444,7 +494,7 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
         count_header = "Holes Count" if is_hole else "No."
         headers = ["Item No.", "Particular Description", count_header, "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
 
-        ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['title']} ({item['unit']})").font = Font(bold=True, size=11)
+        ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item_title} ({item['unit']})").font = Font(bold=True, size=11)
         ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=9)
         row_idx += 1
 
@@ -653,7 +703,10 @@ def main():
     earthwork_items = parse_excel_rates(earthwork_path)
 
     prefix = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
-    ew_options = {f"{prefix} Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
+    ew_options = {}
+    for i in earthwork_items:
+        translated_title = get_translated_item_title(i['item_no'], i['title'], lang)
+        ew_options[f"{prefix} Item {i['item_no']} - {translated_title}"] = i
 
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
@@ -759,6 +812,7 @@ def main():
     rate_sand = locals().get('rate_sand', 45000.0)
     rate_carriage = locals().get('rate_carriage', 15000.0)
 
+    # Base Mapping for Rates
     rate_map = {
         "Worker": rate_worker,
         "Worker for carrying and ramming": rate_worker,
@@ -799,6 +853,7 @@ def main():
 
     for idx, item in enumerate(selected_items_list):
         item_no_str = str(item['item_no'])
+        item_title = get_translated_item_title(item_no_str, item['title'], lang)
         rows_state_key = f"rows_data_{item_no_str}_{idx}"
 
         unit_str = str(item['unit']).lower().strip()
@@ -822,7 +877,7 @@ def main():
                 }
             ]
 
-        with st.expander(f"📌 Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
+        with st.expander(f"📌 Item {item_no_str} - {item_title} [{item['unit']}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
 
@@ -957,7 +1012,7 @@ def main():
             
             st.info(f"💡 **Item {item_no_str} Total = `{item_total_qty:,.2f} {item['unit']}`**")
 
-    meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
+    meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state, lang)
     st.download_button(
         label=t['dl_meas_excel'],
         data=meas_excel_buffer,
@@ -977,9 +1032,10 @@ def main():
 
     for idx, item in enumerate(selected_items_list):
         item_no = str(item['item_no'])
+        item_title = get_translated_item_title(item_no, item['title'], lang)
         measured_qty = item_quantities.get(item_no, 0.0)
 
-        st.markdown(f"#### Item {item_no} - {item['title']}")
+        st.markdown(f"#### Item {item_no} - {item_title}")
 
         unit_str = str(item['unit']).lower().strip()
         is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
@@ -989,7 +1045,7 @@ def main():
 
         display_rows.append({
             t['item_no_col']: item_no,
-            t['particular']: item['title'],
+            t['particular']: item_title,
             t['unit']: item['unit'],
             t['quantity']: f"{measured_qty:,.2f}",
             t['rate_mmk']: "",
@@ -1003,14 +1059,14 @@ def main():
 
             display_rows.append({
                 t['item_no_col']: "",
-                t['particular']: f"  └ {item['title']}",
+                t['particular']: f"  └ {item_title}",
                 t['unit']: item['unit'],
                 t['quantity']: f"{measured_qty:,.2f}",
                 t['rate_mmk']: f"{ls_rate:,.2f}",
                 t['amount_mmk']: f"{amount:,.2f}"
             })
 
-            labour_summary[item['title']] = {
+            labour_summary[item_title] = {
                 "unit": item['unit'],
                 "qty": measured_qty,
                 "rate": ls_rate,
@@ -1057,7 +1113,8 @@ def main():
                         extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
 
             for row in item['breakdown']:
-                part = row['particular']
+                raw_part = row['particular']
+                translated_part = get_translated_name(raw_part, lang)
                 std_qty = row['qty']
                 u = row['unit']
 
@@ -1066,7 +1123,7 @@ def main():
                 else:
                     req_qty = (std_qty / std_base_qty) * measured_qty
 
-                part_lower = part.lower()
+                part_lower = raw_part.lower()
                 if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
                     req_qty += (extra_worker_depth + extra_worker_lead)
 
@@ -1074,14 +1131,14 @@ def main():
                 if 'l-s' in u_str or 'ls' in u_str or 'lump' in u_str:
                     req_qty = 1.0
 
-                unit_rate = rate_map.get(part, 0.0)
+                unit_rate = rate_map.get(raw_part, 0.0)
                 amount = req_qty * unit_rate
                 item_total_cost += amount
 
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
                 row_data = {
-                    "part": part,
+                    "part": translated_part,
                     "unit": u,
                     "qty": req_qty,
                     "rate": unit_rate,
@@ -1094,15 +1151,15 @@ def main():
                     mat_breakdown.append(row_data)
 
                 target_dict = labour_summary if is_labour else material_summary
-                if part not in target_dict:
-                    target_dict[part] = {"unit": u, "qty": req_qty, "rate": unit_rate, "amount": amount}
+                if translated_part not in target_dict:
+                    target_dict[translated_part] = {"unit": u, "qty": req_qty, "rate": unit_rate, "amount": amount}
                 else:
-                    target_dict[part]["qty"] += req_qty
-                    target_dict[part]["amount"] += amount
+                    target_dict[translated_part]["qty"] += req_qty
+                    target_dict[translated_part]["amount"] += amount
 
             if mat_breakdown:
                 display_rows.append({
-                    t['item_no_col']: "", t['particular']: t['mat_cost_title'], t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
+                    t['item_no_col']: "", t['particular']: f"  {t['mat_cost_sec']}", t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
                 })
                 for m in mat_breakdown:
                     display_rows.append({
@@ -1116,7 +1173,7 @@ def main():
 
             if lab_breakdown:
                 display_rows.append({
-                    t['item_no_col']: "", t['particular']: t['lab_cost_title'], t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
+                    t['item_no_col']: "", t['particular']: f"  {t['lab_cost_sec']}", t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
                 })
                 for l in lab_breakdown:
                     display_rows.append({
@@ -1130,7 +1187,7 @@ def main():
 
         display_rows.append({
             t['item_no_col']: "",
-            t['particular']: t['total_item_cost'],
+            t['particular']: f"  {t['total_cost_sec']}",
             t['unit']: "",
             t['quantity']: "",
             t['rate_mmk']: "",
