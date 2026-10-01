@@ -23,16 +23,21 @@ TRANSLATIONS = {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ",
         "tools_title": "🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)",
-        "tab_rates": "⚙️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
+        "tab_rates": "⚙️️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
         "tab_calc": "🧮 ဂဏန်းတွက်စက်",
         "tab_conv": "🔄 ယူနစ်ပြောင်းရန်",
         "tab_upload": "📥 Excel ဖိုင်တင်ရန်",
         "rates_subheader": "မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
         "labour_rates": "**👷 လုပ်အားခ ပေါက်ဈေးများ**",
-        "other_rates": "**📦 အခြား ကုန်ကျစရိတ်များ**",
+        "material_rates": "**📦 ပစ္စည်းနှင့် အခြား ကုန်ကျစရိတ်များ**",
         "rate_worker": "အလုပ်သမား (ကျပ်)",
         "rate_digger": "မြေကျင်းတူး (ကျပ်)",
         "rate_maistry": "ခေါင်းဆောင် / မေစတရီ (ကျပ်)",
+        "rate_surveyor": "တိုင်းတာရေးမှူး / Surveyor (ကျပ်)",
+        "rate_carpenter": "လက်သမား / Carpenter (ကျပ်)",
+        "rate_timber": "သစ် / Timber (၁ တန် ကျပ်)",
+        "rate_nails": "သံရိုက် / Wire Nails (၁ ပိဿာ ကျပ်)",
+        "rate_water": "ရေဖိုးရေခ / Water Charges (L-s ကျပ်)",
         "rate_sand": "သဲဖို့ (ကျင်း)",
         "rate_carriage": "မြေ/သဲ သယ်ယူခ (ကျင်း)",
         "calc_subheader": "🧮 အလွယ်တွက်စက်",
@@ -102,10 +107,15 @@ TRANSLATIONS = {
         "tab_upload": "📥 Import Excel",
         "rates_subheader": "Set Earthwork Unit Rates (MMK)",
         "labour_rates": "**👷 Labour Rates**",
-        "other_rates": "**📦 Other Costs**",
+        "material_rates": "**📦 Material & Other Costs**",
         "rate_worker": "Worker (MMK)",
         "rate_digger": "Digger (MMK)",
         "rate_maistry": "Maistry / Supervisor (MMK)",
+        "rate_surveyor": "Surveyor (MMK)",
+        "rate_carpenter": "Carpenter (MMK)",
+        "rate_timber": "Timber (per Ton)",
+        "rate_nails": "Wire Nails (per Viss)",
+        "rate_water": "Water Charges (L-s MMK)",
         "rate_sand": "Sand Filling (Sud / 100 Cft)",
         "rate_carriage": "Earth/Sand Carriage (Sud / 100 Cft)",
         "calc_subheader": "🧮 Quick Calculator",
@@ -665,9 +675,14 @@ def main():
                 rate_worker = st.number_input(t['rate_worker'], value=25000.0, step=1000.0)
                 rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
                 rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
+                rate_surveyor = st.number_input(t['rate_surveyor'], value=40000.0, step=1000.0)
+                rate_carpenter = st.number_input(t['rate_carpenter'], value=35000.0, step=1000.0)
 
             with col_r2:
-                st.markdown(t['other_rates'])
+                st.markdown(t['material_rates'])
+                rate_timber = st.number_input(t['rate_timber'], value=1800000.0, step=50000.0)
+                rate_nails = st.number_input(t['rate_nails'], value=12000.0, step=500.0)
+                rate_water = st.number_input(t['rate_water'], value=20000.0, step=1000.0)
                 rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
                 rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
 
@@ -726,10 +741,16 @@ def main():
                     parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
                     st.rerun()
 
-    # Rate Fallbacks
+    # Rate Fallbacks & Mapping
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
     rate_maistry = locals().get('rate_maistry', 30000.0)
+    rate_surveyor = locals().get('rate_surveyor', 40000.0)
+    rate_carpenter = locals().get('rate_carpenter', 35000.0)
+
+    rate_timber = locals().get('rate_timber', 1800000.0)
+    rate_nails = locals().get('rate_nails', 12000.0)
+    rate_water = locals().get('rate_water', 20000.0)
     rate_sand = locals().get('rate_sand', 45000.0)
     rate_carriage = locals().get('rate_carriage', 15000.0)
 
@@ -740,6 +761,11 @@ def main():
         "Worker for carrying": rate_worker,
         "Digger": rate_digger,
         "Maistry": rate_maistry,
+        "Surveyor": rate_surveyor,
+        "Carpenter": rate_carpenter,
+        "Timber": rate_timber,
+        "Wire Nails": rate_nails,
+        "Water Charges": rate_water,
         "Sand": rate_sand,
         "Carriage to site": rate_carriage,
     }
@@ -995,6 +1021,11 @@ def main():
                     req_qty = std_qty * measured_qty
                 else:
                     req_qty = (std_qty / std_base_qty) * measured_qty
+
+                # Handle Water Charges as Lumpsum (L-s) logic
+                u_str = str(u).lower().strip()
+                if 'l-s' in u_str or 'ls' in u_str or 'lump' in u_str:
+                    req_qty = 1.0
 
                 unit_rate = rate_map.get(part, 0.0)
                 amount = req_qty * unit_rate
