@@ -108,28 +108,15 @@ UNIT_TRANSLATIONS = {
     }
 }
 
-def translate_unit(unit_str, lang):
-    if not unit_str:
-        return ""
-    u_clean = str(unit_str).strip()
-    return UNIT_TRANSLATIONS.get(lang, {}).get(u_clean, u_clean)
-
-def translate_particular(part_str, lang):
-    if not part_str:
-        return ""
-    p_clean = str(part_str).strip()
-    return PARTICULAR_TRANSLATIONS.get(lang, {}).get(p_clean, p_clean)
-
 # Multi-language dictionary
 TRANSLATIONS = {
     "MM": {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ",
-        "tools_title": "🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)",
-        "tab_rates": "⚙ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
+        "rates_title": "⚙️ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေးများ သတ်မှတ်ရန်",
+        "utility_tools_title": "🧮 တွက်ချက်ရေး အကူကိရိယာများ (Quick Tools)",
         "tab_calc": "🧮 ဂဏန်းတွက်စက်",
         "tab_conv": "🔄 ယူနစ်ပြောင်းရန်",
-        "tab_upload": "📥 Excel ဖိုင်တင်ရန်",
         "rates_subheader": "မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
         "labour_rates": "**👷 လုပ်အားခ ပေါက်ဈေးများ**",
         "material_rates": "**📦 ပစ္စည်းနှင့် အခြား ကုန်ကျစရိတ်များ**",
@@ -158,10 +145,6 @@ TRANSLATIONS = {
         "conv_sft_label": "Sft / စတုရန်းပေ:",
         "conv_cft_label": "Cft / ကုဗပေ:",
         "conv_sud_label": "Cft / ကုဗပေ ပမာဏ:",
-        "upload_subheader": "📥 တိုင်းတာပြီး Earthwork Excel ဖိုင်တင်ရန်",
-        "download_template": "📄 Earthwork နမူနာ ပုံစံ (Template) ရယူရန်",
-        "upload_file_label": "Excel / CSV ဖိုင် ရွေးပါ:",
-        "btn_parse_excel": "🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်",
         "sec1_title": "၁။ တွက်ချက်လိုသော Earthwork Item များ ရွေးပါ",
         "select_items": "🚜 မြေကျင်းလုပ်ငန်းမှ တွက်လိုသည့် Item များကို ရွေးပါ:",
         "no_excel_err": "⚠️ '1 Earth Work.xls' ဖိုင်ကို ရှာမတွေ့ပါ သို့မဟုတ် ဖိုင်ထဲတွင် ဒေတာ မရှိပါ။",
@@ -212,11 +195,10 @@ TRANSLATIONS = {
     "EN": {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork excavation and backfilling.",
-        "tools_title": "🛠️ Tools & Unit Rates Configuration",
-        "tab_rates": "⚙ Material/Labour Rates",
+        "rates_title": "⚙️ Set Material & Labour Rates",
+        "utility_tools_title": "🧮 Quick Utility Tools",
         "tab_calc": "🧮 Calculator",
         "tab_conv": "🔄 Unit Converter",
-        "tab_upload": "📥 Import Excel",
         "rates_subheader": "Set Earthwork Unit Rates (MMK)",
         "labour_rates": "**👷 Labour Rates**",
         "material_rates": "**📦 Material & Other Costs**",
@@ -245,10 +227,6 @@ TRANSLATIONS = {
         "conv_sft_label": "Sft:",
         "conv_cft_label": "Cft:",
         "conv_sud_label": "Cft Quantity:",
-        "upload_subheader": "📥 Import Measured Earthwork Excel File",
-        "download_template": "📄 Download Earthwork Template",
-        "upload_file_label": "Select Excel / CSV File:",
-        "btn_parse_excel": "🚀 Import Data from File",
         "sec1_title": "1. Select Earthwork Items",
         "select_items": "🚜 Choose items to calculate from Earthwork catalog:",
         "no_excel_err": "⚠️ '1 Earth Work.xls' file not found or contains no data.",
@@ -298,6 +276,18 @@ TRANSLATIONS = {
     }
 }
 
+def translate_unit(unit_str, lang):
+    if not unit_str:
+        return ""
+    u_clean = str(unit_str).strip()
+    return UNIT_TRANSLATIONS.get(lang, {}).get(u_clean, u_clean)
+
+def translate_particular(part_str, lang):
+    if not part_str:
+        return ""
+    p_clean = str(part_str).strip()
+    return PARTICULAR_TRANSLATIONS.get(lang, {}).get(p_clean, p_clean)
+
 @st.cache_data
 def parse_excel_rates(file_path):
     if not os.path.exists(file_path):
@@ -317,7 +307,6 @@ def parse_excel_rates(file_path):
         unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
         qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
 
-        # Item 22 အပါအဝင် မလိုလိုသော Item များကို ကျော်မည်
         if item_no in ['10', '10.0', '11', '11.0', '22', '22.0']:
             continue
 
@@ -350,188 +339,6 @@ def parse_excel_rates(file_path):
         items.append(current_item)
 
     return items
-
-
-def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
-    st.session_state['last_excel_error'] = None
-
-    try:
-        if uploaded_file is None:
-            return
-
-        if hasattr(uploaded_file, 'seek'):
-            uploaded_file.seek(0)
-
-        file_name = getattr(uploaded_file, 'name', '').lower()
-
-        try:
-            if file_name.endswith('.csv'):
-                df_raw = pd.read_csv(uploaded_file, header=None)
-            else:
-                df_raw = pd.read_excel(uploaded_file, header=None)
-        except Exception:
-            if hasattr(uploaded_file, 'seek'):
-                uploaded_file.seek(0)
-            if file_name.endswith('.csv'):
-                df_raw = pd.read_csv(uploaded_file, header=None)
-            else:
-                df_raw = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
-
-        header_row_idx = None
-        for idx, row in df_raw.iterrows():
-            row_vals = row.dropna().astype(str).str.lower().tolist()
-            if any('particular' in v or 'description' in v for v in row_vals) and any('no' in v or 'item' in v for v in row_vals):
-                header_row_idx = idx
-                break
-        
-        if hasattr(uploaded_file, 'seek'):
-            uploaded_file.seek(0)
-
-        if header_row_idx is not None:
-            if file_name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file, header=header_row_idx)
-            else:
-                df = pd.read_excel(uploaded_file, header=header_row_idx)
-        else:
-            if file_name.endswith('.csv'):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file)
-
-        df.columns = [str(c).strip().lower() for c in df.columns]
-        
-        col_item = next((c for c in df.columns if 'item' in c), None)
-        col_desc = next((c for c in df.columns if 'particular' in c or 'desc' in c), None)
-        col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
-        col_l = next((c for c in df.columns if 'l (' in c or 'l(' in c or 'length' in c or c == 'l'), None)
-        col_b = next((c for c in df.columns if 'b (' in c or 'b(' in c or 'breadth' in c or 'width' in c or c == 'b'), None)
-        col_h = next((c for c in df.columns if 'h (' in c or 'h(' in c or 'height' in c or 'depth' in c or c == 'h'), None)
-        col_ded = next((c for c in df.columns if 'deduction' in c or ('ded' in c and 'type' not in c)), None)
-        col_type = next((c for c in df.columns if 'type' in c), None)
-
-        if not col_item or not col_desc:
-            st.session_state['last_excel_error'] = "❌ Excel file missing 'Item No.' or 'Particular Description' column."
-            return
-
-        def clean_str_item(val):
-            if pd.isna(val):
-                return ""
-            s = str(val).strip()
-            if s.endswith('.0'):
-                s = s[:-2]
-            return s
-
-        df['clean_item_no'] = df[col_item].apply(clean_str_item)
-        
-        valid_rows = df[
-            (df['clean_item_no'] != '') & 
-            ~df['clean_item_no'].str.lower().str.contains('item no|total|detail|description') &
-            df[col_desc].notna() &
-            (df[col_desc].astype(str).str.strip() != '')
-        ].copy()
-
-        excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
-
-        if not excel_item_nos:
-            st.session_state['last_excel_error'] = "⚠ No valid measurement data found in Excel file."
-            return
-
-        selected_ew = []
-        for k, v in ew_options.items():
-            item_no_str = clean_str_item(v.get('item_no', ''))
-            if item_no_str in excel_item_nos:
-                selected_ew.append(k)
-
-        st.session_state['selected_ew'] = selected_ew
-
-        all_items_flat = [ew_options[k] for k in selected_ew if k in ew_options]
-
-        imported_rows_count = 0
-        for idx, item in enumerate(all_items_flat):
-            item_no_str = clean_str_item(item.get('item_no', ''))
-            rows_state_key = f"rows_data_{item_no_str}_{idx}"
-
-            item_df = valid_rows[valid_rows['clean_item_no'] == item_no_str]
-
-            if not item_df.empty:
-                new_rows = []
-                for _, r in item_df.iterrows():
-                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Grid 1"
-                    
-                    try:
-                        no_val = int(float(r[col_no])) if col_no and pd.notna(r[col_no]) else 1
-                    except (ValueError, TypeError):
-                        no_val = 1
-
-                    def safe_float(val):
-                        try:
-                            if pd.isna(val) or str(val).strip() in ['-', '', 'nan', 'NaN']:
-                                return 0.0
-                            return float(str(val).replace(',', ''))
-                        except (ValueError, TypeError):
-                            return 0.0
-
-                    l_val = safe_float(r[col_l]) if col_l else 0.0
-                    b_val = safe_float(r[col_b]) if col_b else 0.0
-                    h_val = safe_float(r[col_h]) if col_h else 0.0
-                    ded_val = safe_float(r[col_ded]) if col_ded else 0.0
-                    
-                    type_str = str(r[col_type]).lower() if col_type and pd.notna(r[col_type]) else ""
-                    is_ded_row = "ded" in type_str or "minus" in type_str or "sub" in type_str or ded_val > 0
-
-                    new_rows.append({
-                        "desc": desc_val,
-                        "no": max(1, no_val),
-                        "l": l_val,
-                        "b": b_val,
-                        "h": h_val,
-                        "ded": ded_val,
-                        "is_deduction_row": is_ded_row
-                    })
-
-                if new_rows:
-                    st.session_state[rows_state_key] = new_rows
-                    imported_rows_count += len(new_rows)
-
-        st.session_state['excel_import_success'] = f"✅ Successfully imported {imported_rows_count} measurement items from Excel."
-
-    except Exception as e:
-        err_msg = traceback.format_exc()
-        st.session_state['last_excel_error'] = f"❌ Import Error: {e}\n\n{err_msg}"
-
-
-def export_measurement_template():
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Earthwork Measurement Template"
-
-    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type"]
-    header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF")
-
-    for col_idx, h in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_idx, value=h)
-        cell.fill = header_fill
-        cell.font = header_font
-
-    sample_data = [
-        ["2", "Excavation Grid A-1", 2, 10, 5, 8, 0, "Addition"],
-        ["3", "Foundation Hole Grid B", 1, 20, 150, 6, 0, "Addition"],
-    ]
-
-    for row_idx, row_vals in enumerate(sample_data, start=2):
-        for col_idx, val in enumerate(row_vals, start=1):
-            ws.cell(row=row_idx, column=col_idx, value=val)
-
-    for col in ws.columns:
-        max_len = max(len(str(cell.value or '')) for cell in col)
-        col_letter = get_column_letter(col[0].column)
-        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
-
-    buffer = io.BytesIO()
-    wb.save(buffer)
-    buffer.seek(0)
-    return buffer
 
 
 def export_measurement_sheet_excel(selected_items_list, st_session_state, lang):
@@ -771,7 +578,6 @@ def main():
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
-    # ဘာသာစကားပေါ်မူတည်၍ Title နှင့် Unit များကို Dynamic ပြောင်းလဲခြင်း
     prefix = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
     ew_options = {}
     for item in earthwork_items:
@@ -792,39 +598,37 @@ def main():
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
 
-    if st.session_state.get('last_excel_error'):
-        st.error(st.session_state['last_excel_error'])
+    # ----------------------------------------------------
+    # ၁။ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေး သတ်မှတ်ရန် Block
+    # ----------------------------------------------------
+    with st.expander(t['rates_title'], expanded=False):
+        st.subheader(t['rates_subheader'])
+        col_r1, col_r2 = st.columns(2)
+        
+        with col_r1:
+            st.markdown(t['labour_rates'])
+            rate_worker = st.number_input(t['rate_worker'], value=25000.0, step=1000.0)
+            rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
+            rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
+            rate_surveyor = st.number_input(t['rate_surveyor'], value=40000.0, step=1000.0)
+            rate_carpenter = st.number_input(t['rate_carpenter'], value=35000.0, step=1000.0)
 
-    if st.session_state.get('excel_import_success'):
-        st.success(st.session_state['excel_import_success'])
+        with col_r2:
+            st.markdown(t['material_rates'])
+            rate_timber = st.number_input(t['rate_timber'], value=1800000.0, step=50000.0)
+            rate_nails = st.number_input(t['rate_nails'], value=12000.0, step=500.0)
+            rate_water = st.number_input(t['rate_water'], value=20000.0, step=1000.0)
+            rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
+            rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
 
-    with st.expander(t['tools_title'], expanded=True):
-        tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
-            t['tab_rates'], 
+    # ----------------------------------------------------
+    # ၂။ "ဂဏန်းတွက်စက်" နှင့် "ယူနစ်ပြောင်းရန်" သီးသန့် Expander Block
+    # ----------------------------------------------------
+    with st.expander(t['utility_tools_title'], expanded=False):
+        tab_calc, tab_conv = st.tabs([
             t['tab_calc'], 
-            t['tab_conv'],
-            t['tab_upload']
+            t['tab_conv']
         ])
-
-        with tab_rates:
-            st.subheader(t['rates_subheader'])
-            col_r1, col_r2 = st.columns(2)
-            
-            with col_r1:
-                st.markdown(t['labour_rates'])
-                rate_worker = st.number_input(t['rate_worker'], value=25000.0, step=1000.0)
-                rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
-                rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
-                rate_surveyor = st.number_input(t['rate_surveyor'], value=40000.0, step=1000.0)
-                rate_carpenter = st.number_input(t['rate_carpenter'], value=35000.0, step=1000.0)
-
-            with col_r2:
-                st.markdown(t['material_rates'])
-                rate_timber = st.number_input(t['rate_timber'], value=1800000.0, step=50000.0)
-                rate_nails = st.number_input(t['rate_nails'], value=12000.0, step=500.0)
-                rate_water = st.number_input(t['rate_water'], value=20000.0, step=1000.0)
-                rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
-                rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
 
         with tab_calc:
             st.subheader(t['calc_subheader'])
@@ -864,22 +668,6 @@ def main():
             elif conv_type == t['conv_cft_sud']:
                 cft_val = st.number_input(t['conv_sud_label'], min_value=0.0, value=500.0)
                 st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} Sud (%Cft)**")
-
-        with tab_upload:
-            st.subheader(t['upload_subheader'])
-            template_buffer = export_measurement_template()
-            st.download_button(
-                label=t['download_template'],
-                data=template_buffer,
-                file_name="Earthwork_Measurement_Template.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            st.divider()
-            uploaded_meas_file = st.file_uploader(t['upload_file_label'], type=["xlsx", "xls", "csv"])
-            if uploaded_meas_file is not None:
-                if st.button(t['btn_parse_excel'], type="primary", use_container_width=True):
-                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
-                    st.rerun()
 
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
@@ -1168,7 +956,6 @@ def main():
             rows_state_key = f"rows_data_{item_no}_{idx}"
             current_rows = st.session_state.get(rows_state_key, [])
 
-            # Dynamic Additional Lift/Lead Calculation Logic
             for r in current_rows:
                 if r.get('is_deduction_row'):
                     continue
@@ -1181,7 +968,6 @@ def main():
 
                 row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
 
-                # Item 2, 3, 4 (Initial 5 ft depth)
                 if item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
                     if h_val > 5.0:
                         extra_h = h_val - 5.0
@@ -1194,14 +980,12 @@ def main():
                         lead_steps = math.ceil(extra_dist / 100.0)
                         extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
 
-                # Item 20 (Initial 10 ft depth, Add 3.38 workers per additional 5 ft lift)
                 elif item_no in ['20', '20.0']:
                     if h_val > 10.0:
                         extra_h = h_val - 10.0
                         depth_steps = math.ceil(extra_h / 5.0)
                         extra_worker_depth += depth_steps * 3.38 * (row_cft / 100.0)
 
-                # Item 21 (Initial 10 ft depth, Add 3.00 workers per additional 5 ft lift)
                 elif item_no in ['21', '21.0']:
                     if h_val > 10.0:
                         extra_h = h_val - 10.0
