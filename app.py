@@ -1,5 +1,6 @@
 import os
 import io
+import math
 import traceback
 import pandas as pd
 import streamlit as st
@@ -63,7 +64,7 @@ TRANSLATIONS = {
         "lumpsum_rate": "တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)",
         "len_ft": "အရှည် L (ပေ)",
         "wid_ft": "အနံ B (ပေ)",
-        "hei_ft": "အမြင့်/အထူ H (ပေ)",
+        "hei_ft": "အမြင့်/အနက် H (ပေ)",
         "deduction": "အနှုတ်ကျင်း (Deduction)",
         "is_deduction_row": "➖ အနှုတ်လိုင်း ဖြစ်သည်",
         "btn_copy": "📋 ပွားမည် (Copy)",
@@ -141,7 +142,7 @@ TRANSLATIONS = {
         "lumpsum_rate": "Lumpsum Rate (MMK)",
         "len_ft": "Length L (ft)",
         "wid_ft": "Breadth B (ft)",
-        "hei_ft": "Height/Thickness H (ft)",
+        "hei_ft": "Height/Depth H (ft)",
         "deduction": "Deduction",
         "is_deduction_row": "➖ Deduction Row",
         "btn_copy": "📋 Copy",
@@ -308,7 +309,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
         excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
 
         if not excel_item_nos:
-            st.session_state['last_excel_error'] = "⚠️️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
+            st.session_state['last_excel_error'] = "⚠ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
         selected_ew = []
@@ -390,9 +391,9 @@ def export_measurement_template():
         cell.font = header_font
 
     sample_data = [
-        ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
-        ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
-        ["2", "Backfilling Work", 1, 50, 20, 2, 0, "Addition"],
+        ["2", "Excavation Grid A-1", 2, 10, 5, 8, 0, "Addition"],
+        ["3", "Column Box Hole Deduction", 1, 2, 2, 6, 0, "Deduction"],
+        ["4", "Backfilling Work", 1, 50, 120, 2, 0, "Addition"],
     ]
 
     for row_idx, row_vals in enumerate(sample_data, start=2):
@@ -578,7 +579,6 @@ def main():
         page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
     )
 
-    # Top Language Selector (Main UI Area - No Sidebar)
     col_title_space, col_lang = st.columns([4, 1])
     with col_lang:
         lang_choice = st.radio(
@@ -591,7 +591,6 @@ def main():
     lang = "MM" if lang_choice == "မြန်မာ" else "EN"
     t = TRANSLATIONS[lang]
 
-    # CSS Customizations
     st.markdown("""
         <style>
             .main-header {
@@ -636,7 +635,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Banner
     st.markdown(f"""
         <div class="main-header">
             <h1>{t['title']}</h1>
@@ -644,7 +642,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Load Earthwork Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
@@ -660,7 +657,6 @@ def main():
     if st.session_state.get('excel_import_success'):
         st.success(st.session_state['excel_import_success'])
 
-    # Tools
     with st.expander(t['tools_title'], expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             t['tab_rates'], 
@@ -744,7 +740,6 @@ def main():
                     parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
                     st.rerun()
 
-    # Rate Fallbacks & Mapping
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
     rate_maistry = locals().get('rate_maistry', 30000.0)
@@ -793,6 +788,7 @@ def main():
     st.markdown(f'<div class="section-title">{t["sec2_title"]}</div>', unsafe_allow_html=True)
 
     item_quantities = {}
+    item_extra_workers = {}  # Store calculated extra workers per item for Item 10 and Item 11
     ls_custom_rates = {}
 
     for idx, item in enumerate(selected_items_list):
@@ -821,6 +817,7 @@ def main():
         with st.expander(f"📌 Item {item['item_no']} - {item['title']} [{item['unit']}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
+            total_extra_worker_units = 0.0  # Extra workers per 100 Cft
 
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
@@ -903,6 +900,20 @@ def main():
 
                     row_qty = max(0.0, gross_qty - ded_val)
 
+                    # Dynamic Extra Depth & Lead Calculation for Item 2, 3, 4
+                    if item_no_str in ["2", "3", "4"] and not is_ded_row and row_qty > 0:
+                        # Item 10 logic: Every additional 5 ft depth -> +0.5 worker per 100 Cft
+                        depth_extra_steps = max(0, math.ceil((h_val - 5.0) / 5.0)) if h_val > 5.0 else 0
+                        extra_worker_depth = depth_extra_steps * 0.5
+
+                        # Item 11 logic: Every additional 100 ft lead (L or B) -> +0.5 worker per 100 Cft
+                        max_lead = max(l_val, b_val)
+                        lead_extra_steps = max(0, math.ceil((max_lead - 100.0) / 100.0)) if max_lead > 100.0 else 0
+                        extra_worker_lead = lead_extra_steps * 0.5
+
+                        # Total extra worker rate per 100 cft for this row
+                        total_extra_worker_units += (extra_worker_depth + extra_worker_lead) * (row_qty / 100.0)
+
                     if is_ded_row:
                         item_total_qty -= row_qty
                         sub_total_display = -round(row_qty, 2)
@@ -947,6 +958,7 @@ def main():
 
             item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
+            item_extra_workers[item_no_str] = total_extra_worker_units
             
             st.markdown(f"**{t['total_summary']}**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
@@ -1032,6 +1044,11 @@ def main():
                     req_qty = std_qty * measured_qty
                 else:
                     req_qty = (std_qty / std_base_qty) * measured_qty
+
+                # Merge Item 10 & Item 11 Extra Workers directly into Worker quantity
+                if item_no in ["2", "3", "4"] and part.lower().strip() == "worker":
+                    extra_workers_qty = item_extra_workers.get(item_no, 0.0)
+                    req_qty += extra_workers_qty
 
                 # Handle Water Charges as Lumpsum (L-s) logic
                 u_str = str(u).lower().strip()
