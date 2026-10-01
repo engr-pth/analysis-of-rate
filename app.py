@@ -17,61 +17,153 @@ LABOUR_KEYWORDS = [
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
-# Language Dictionary for Dual Language Support (Myanmar / English)
-TEXTS = {
-    "my": {
+# Multi-language dictionary
+TRANSLATIONS = {
+    "MM": {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ",
-        "tools_header": "🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)",
+        "tools_title": "🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)",
         "tab_rates": "⚙️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
         "tab_calc": "🧮 ဂဏန်းတွက်စက်",
         "tab_conv": "🔄 ယူနစ်ပြောင်းရန်",
         "tab_upload": "📥 Excel ဖိုင်တင်ရန်",
-        "rate_title": "မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
-        "labour_rates": "👷 လုပ်အားခ ပေါက်ဈေးများ",
-        "other_rates": "📦 အခြား ကုန်ကျစရိတ်များ",
-        "worker": "အလုပ်သမား (ကျပ်)",
-        "digger": "မြေကျင်းတူး (ကျပ်)",
-        "maistry": "ခေါင်းဆောင် / မေစတရီ (ကျပ်)",
-        "sand": "သဲဖို့ (ကျင်း)",
-        "carriage": "မြေ/သဲ သယ်ယူခ (ကျင်း)",
-        "step1_title": "၁။ တွက်ချက်လိုသော Earthwork Item များ ရွေးပါ",
+        "rates_subheader": "မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
+        "labour_rates": "**👷 လုပ်အားခ ပေါက်ဈေးများ**",
+        "other_rates": "**📦 အခြား ကုန်ကျစရိတ်များ**",
+        "rate_worker": "အလုပ်သမား (ကျပ်)",
+        "rate_digger": "မြေကျင်းတူး (ကျပ်)",
+        "rate_maistry": "ခေါင်းဆောင် / မေစတရီ (ကျပ်)",
+        "rate_sand": "သဲဖို့ (ကျင်း)",
+        "rate_carriage": "မြေ/သဲ သယ်ယူခ (ကျင်း)",
+        "calc_subheader": "🧮 အလွယ်တွက်စက်",
+        "calc_input": "တွက်လိုသည်များကို ရိုက်ထည့်ပါ (ဥပမာ- 10*12.5 + 5):",
+        "calc_ans": "အဖြေ",
+        "calc_err_char": "ဂဏန်းနှင့် သင်္ကေတများသာ ရိုက်ထည့်ပါ။",
+        "calc_err_struct": "တွက်ချက်မှု အမှားရှိနေပါသည် structure ကို ပြန်စစ်ပါ။",
+        "conv_subheader": "🔄 ယူနစ် အပြောင်းအလဲ",
+        "conv_select": "ပြောင်းလိုသည်ကို ရွေးပါ:",
+        "upload_subheader": "📥 တိုင်းတာပြီး Earthwork Excel ဖိုင်တင်ရန်",
+        "download_template": "📄 Earthwork နမူနာ ပုံစံ (Template) ရယူရန်",
+        "upload_file_label": "Excel / CSV ဖိုင် ရွေးပါ:",
+        "btn_parse_excel": "🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်",
+        "sec1_title": "၁။ တွက်ချက်လိုသော Earthwork Item များ ရွေးပါ",
         "select_items": "🚜 မြေကျင်းလုပ်ငန်းမှ တွက်လိုသည့် Item များကို ရွေးပါ:",
-        "step2_title": "📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)",
-        "step3_title": "📊 ၃။ Earthwork ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)",
-        "step4_title": "📜 ၄။ Earthwork BOQ စာရင်းချုပ်",
-        "total_mat": "📦 စုစုပေါင်း ပစ္စည်းဖိုး",
-        "total_lab": "👷 စုစုပေါင်း လုပ်အားခ",
-        "grand_total": "💰 မြေကျင်းလုပ်ငန်း စုစုပေါင်းစရိတ်",
-        "download_meas": "📥 Detail Earthwork Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
-        "download_boq": "📥 Earthwork BOQ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
+        "no_excel_err": "⚠️ '1 Earth Work.xls' ဖိုင်ကို ရှာမတွေ့ပါ သို့မဟုတ် ဖိုင်ထဲတွင် ဒေတာ မရှိပါ။",
+        "item_select_hint": "💡 **အကြံပြုချက်**: တွက်ချက်လိုသော Earthwork Item များကို အထက်ပါ Multiselect Box တွင် ရွေးပေးပါ။",
+        "sec2_title": "📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)",
+        "work_location": "လုပ်ငန်းနေရာ / အမျိုးအစား",
+        "location_grid": "နေရာ / အကွက်အမည်",
+        "grid_default": "အကွက်",
+        "qty_count": "အရေအတွက်",
+        "lumpsum_rate": "တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)",
+        "len_ft": "အရှည် L (ပေ)",
+        "wid_ft": "အနံ B (ပေ)",
+        "hei_ft": "အမြင့်/အထူ H (ပေ)",
+        "deduction": "အနှုတ်ကျင်း (Deduction)",
+        "is_deduction_row": "➖ အနှုတ်လိုင်း ဖြစ်သည်",
+        "btn_copy": "📋 ပွားမည် (Copy)",
+        "btn_add_row": "➕ အကွက်အသစ်ထည့်ရန်",
+        "btn_rem_row": "➖ အကွက်ပြန်ဖြုတ်ရန်",
+        "total_summary": "📊 တိုင်းတာချက် စာရင်းချုပ်",
+        "dl_meas_excel": "📥 Detail Earthwork Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
+        "sec3_title": "📊 ၃။ Earthwork ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)",
+        "particular": "အကြောင်းအရာ",
+        "unit": "ယူနစ်",
+        "quantity": "ပမာဏ",
+        "rate_mmk": "နှုန်းထား (ကျပ်)",
+        "amount_mmk": "ကျသင့်ငွေ (ကျပ်)",
+        "mat_cost_title": "  📦 ပစ္စည်းစရိတ် (Material)",
+        "lab_cost_title": "  👷 လုပ်အားခ (Labour)",
+        "total_item_cost": "  💰 စုစုပေါင်း ကုန်ကျစရိတ်",
+        "sec4_title": "📜 ၄။ Earthwork BOQ စာရင်းချုပ်",
+        "mat_boq_title": "📦 ၁။ ပစ္စည်းကုန်ကျစရိတ် စာရင်း (Material Summary)",
+        "lab_boq_title": "👷 ၂။ လုပ်အားခ စာရင်း (Labour Summary)",
+        "sr_no": "စဉ်",
+        "mat_name": "ပစ္စည်းအမည်",
+        "req_qty": "လိုအပ်သော ပမာဏ",
+        "total_mmk": "စုစုပေါင်း (ကျပ်)",
+        "no_mat_cost": "ပစ္စည်းစရိတ် မရှိပါ။",
+        "no_lab_cost": "လုပ်အားခ စရိတ် မရှိပါ။",
+        "dl_boq_excel": "📥 Earthwork BOQ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
+        "total_mat_val": "📦 စုစုပေါင်း ပစ္စည်းဖိုး",
+        "total_lab_val": "👷 စုစုပေါင်း လုပ်အားခ",
+        "grand_total_val": "💰 မြေကျင်းလုပ်ငန်း စုစုပေါင်းစရိတ်",
+        "type_add": "➕ အပေါင်း",
+        "type_ded": "➖ အနှုတ်",
+        "item_no_col": "Item No"
     },
-    "en": {
+    "EN": {
         "title": "🚜 Earthwork QS & Calculation Tool",
-        "subtitle": "Calculate quantities, rates, and material/labour BOQ breakdown for earthwork projects.",
-        "tools_header": "🛠️ Tools & Unit Rates Configuration",
+        "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork excavation and backfilling.",
+        "tools_title": "🛠️ Tools & Unit Rates Configuration",
         "tab_rates": "⚙️ Material/Labour Rates",
         "tab_calc": "🧮 Calculator",
         "tab_conv": "🔄 Unit Converter",
-        "tab_upload": "📥 Upload Excel",
-        "rate_title": "Set Earthwork Unit Rates (MMK)",
-        "labour_rates": "👷 Labour Rates",
-        "other_rates": "📦 Other Expenses",
-        "worker": "Unskilled Worker (MMK)",
-        "digger": "Digger (MMK)",
-        "maistry": "Maistry / Supervisor (MMK)",
-        "sand": "Sand Filling (Sud / %Cft)",
-        "carriage": "Carriage / Transport (Sud / %Cft)",
-        "step1_title": "1. Select Earthwork Items",
-        "select_items": "🚜 Select items for calculation:",
-        "step2_title": "📐 2. Detail Measurement Input",
-        "step3_title": "📊 3. Cost Rate Analysis",
-        "step4_title": "📜 4. BOQ Summary",
-        "total_mat": "📦 Total Material Cost",
-        "total_lab": "👷 Total Labour Cost",
-        "grand_total": "💰 Grand Total Cost",
-        "download_meas": "📥 Download Measurement Sheet (Excel)",
-        "download_boq": "📥 Download BOQ Summary (Excel)",
+        "tab_upload": "📥 Import Excel",
+        "rates_subheader": "Set Earthwork Unit Rates (MMK)",
+        "labour_rates": "**👷 Labour Rates**",
+        "other_rates": "**📦 Other Costs**",
+        "rate_worker": "Worker (MMK)",
+        "rate_digger": "Digger (MMK)",
+        "rate_maistry": "Maistry / Supervisor (MMK)",
+        "rate_sand": "Sand Filling (Sud / 100 Cft)",
+        "rate_carriage": "Earth/Sand Carriage (Sud / 100 Cft)",
+        "calc_subheader": "🧮 Quick Calculator",
+        "calc_input": "Enter expression (e.g. 10*12.5 + 5):",
+        "calc_ans": "Result",
+        "calc_err_char": "Please enter numbers and mathematical symbols only.",
+        "calc_err_struct": "Calculation error. Please check the expression structure.",
+        "conv_subheader": "🔄 Unit Converter",
+        "conv_select": "Select conversion type:",
+        "upload_subheader": "📥 Import Measured Earthwork Excel File",
+        "download_template": "📄 Download Earthwork Template",
+        "upload_file_label": "Select Excel / CSV File:",
+        "btn_parse_excel": "🚀 Import Data from File",
+        "sec1_title": "1. Select Earthwork Items",
+        "select_items": "🚜 Choose items to calculate from Earthwork catalog:",
+        "no_excel_err": "⚠️ '1 Earth Work.xls' file not found or contains no data.",
+        "item_select_hint": "💡 **Tip**: Select items from the multiselect box above to begin.",
+        "sec2_title": "📐 2. Detail Measurement Input",
+        "work_location": "Work Location / Type",
+        "location_grid": "Location / Grid Name",
+        "grid_default": "Grid",
+        "qty_count": "Quantity",
+        "lumpsum_rate": "Lumpsum Rate (MMK)",
+        "len_ft": "Length L (ft)",
+        "wid_ft": "Breadth B (ft)",
+        "hei_ft": "Height/Thickness H (ft)",
+        "deduction": "Deduction",
+        "is_deduction_row": "➖ Deduction Row",
+        "btn_copy": "📋 Copy",
+        "btn_add_row": "➕ Add Row",
+        "btn_rem_row": "➖ Remove Row",
+        "total_summary": "📊 Measurement Breakdown Summary",
+        "dl_meas_excel": "📥 Download Detail Measurement Sheet (Excel)",
+        "sec3_title": "📊 3. Rate Analysis & Cost Calculation",
+        "particular": "Description",
+        "unit": "Unit",
+        "quantity": "Quantity",
+        "rate_mmk": "Rate (MMK)",
+        "amount_mmk": "Amount (MMK)",
+        "mat_cost_title": "  📦 Material Cost",
+        "lab_cost_title": "  👷 Labour Cost",
+        "total_item_cost": "  💰 Total Item Cost",
+        "sec4_title": "📜 4. Earthwork BOQ Summary",
+        "mat_boq_title": "📦 1. Material Cost Summary",
+        "lab_boq_title": "👷 2. Labour Cost Summary",
+        "sr_no": "No.",
+        "mat_name": "Description",
+        "req_qty": "Required Qty",
+        "total_mmk": "Total (MMK)",
+        "no_mat_cost": "No material costs.",
+        "no_lab_cost": "No labour costs.",
+        "dl_boq_excel": "📥 Download Earthwork BOQ Summary (Excel)",
+        "total_mat_val": "📦 Total Material Cost",
+        "total_lab_val": "👷 Total Labour Cost",
+        "grand_total_val": "💰 Total Earthwork Cost",
+        "type_add": "➕ Addition",
+        "type_ded": "➖ Deduction",
+        "item_no_col": "Item No"
     }
 }
 
@@ -123,6 +215,154 @@ def parse_excel_rates(file_path):
         items.append(current_item)
 
     return items
+
+
+def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
+    st.session_state['last_excel_error'] = None
+
+    try:
+        if uploaded_file is None:
+            return
+
+        if hasattr(uploaded_file, 'seek'):
+            uploaded_file.seek(0)
+
+        file_name = getattr(uploaded_file, 'name', '').lower()
+
+        try:
+            if file_name.endswith('.csv'):
+                df_raw = pd.read_csv(uploaded_file, header=None)
+            else:
+                df_raw = pd.read_excel(uploaded_file, header=None)
+        except Exception:
+            if hasattr(uploaded_file, 'seek'):
+                uploaded_file.seek(0)
+            if file_name.endswith('.csv'):
+                df_raw = pd.read_csv(uploaded_file, header=None)
+            else:
+                df_raw = pd.read_excel(uploaded_file, header=None, engine='openpyxl')
+
+        header_row_idx = None
+        for idx, row in df_raw.iterrows():
+            row_vals = row.dropna().astype(str).str.lower().tolist()
+            if any('particular' in v or 'description' in v for v in row_vals) and any('no' in v or 'item' in v for v in row_vals):
+                header_row_idx = idx
+                break
+        
+        if hasattr(uploaded_file, 'seek'):
+            uploaded_file.seek(0)
+
+        if header_row_idx is not None:
+            if file_name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file, header=header_row_idx)
+            else:
+                df = pd.read_excel(uploaded_file, header=header_row_idx)
+        else:
+            if file_name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+
+        df.columns = [str(c).strip().lower() for c in df.columns]
+        
+        col_item = next((c for c in df.columns if 'item' in c), None)
+        col_desc = next((c for c in df.columns if 'particular' in c or 'desc' in c), None)
+        col_no = next((c for c in df.columns if 'no' in c and 'item' not in c), None)
+        col_l = next((c for c in df.columns if 'l (' in c or 'l(' in c or 'length' in c or c == 'l'), None)
+        col_b = next((c for c in df.columns if 'b (' in c or 'b(' in c or 'breadth' in c or 'width' in c or c == 'b'), None)
+        col_h = next((c for c in df.columns if 'h (' in c or 'h(' in c or 'height' in c or 'depth' in c or c == 'h'), None)
+        col_ded = next((c for c in df.columns if 'deduction' in c or ('ded' in c and 'type' not in c)), None)
+        col_type = next((c for c in df.columns if 'type' in c), None)
+
+        if not col_item or not col_desc:
+            st.session_state['last_excel_error'] = "❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။"
+            return
+
+        def clean_str_item(val):
+            if pd.isna(val):
+                return ""
+            s = str(val).strip()
+            if s.endswith('.0'):
+                s = s[:-2]
+            return s
+
+        df['clean_item_no'] = df[col_item].apply(clean_str_item)
+        
+        valid_rows = df[
+            (df['clean_item_no'] != '') & 
+            ~df['clean_item_no'].str.lower().str.contains('item no|total|detail|description') &
+            df[col_desc].notna() &
+            (df[col_desc].astype(str).str.strip() != '')
+        ].copy()
+
+        excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
+
+        if not excel_item_nos:
+            st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
+            return
+
+        selected_ew = []
+        for k, v in ew_options.items():
+            item_no_str = clean_str_item(v.get('item_no', ''))
+            if item_no_str in excel_item_nos:
+                selected_ew.append(k)
+
+        st.session_state['selected_ew'] = selected_ew
+
+        all_items_flat = [ew_options[k] for k in selected_ew if k in ew_options]
+
+        imported_rows_count = 0
+        for idx, item in enumerate(all_items_flat):
+            item_no_str = clean_str_item(item.get('item_no', ''))
+            rows_state_key = f"rows_data_{item_no_str}_{idx}"
+
+            item_df = valid_rows[valid_rows['clean_item_no'] == item_no_str]
+
+            if not item_df.empty:
+                new_rows = []
+                for _, r in item_df.iterrows():
+                    desc_val = str(r[col_desc]).strip() if pd.notna(r[col_desc]) else "Grid 1"
+                    
+                    try:
+                        no_val = int(float(r[col_no])) if col_no and pd.notna(r[col_no]) else 1
+                    except (ValueError, TypeError):
+                        no_val = 1
+
+                    def safe_float(val):
+                        try:
+                            if pd.isna(val) or str(val).strip() in ['-', '', 'nan', 'NaN']:
+                                return 0.0
+                            return float(str(val).replace(',', ''))
+                        except (ValueError, TypeError):
+                            return 0.0
+
+                    l_val = safe_float(r[col_l]) if col_l else 0.0
+                    b_val = safe_float(r[col_b]) if col_b else 0.0
+                    h_val = safe_float(r[col_h]) if col_h else 0.0
+                    ded_val = safe_float(r[col_ded]) if col_ded else 0.0
+                    
+                    type_str = str(r[col_type]).lower() if col_type and pd.notna(r[col_type]) else ""
+                    is_ded_row = "ded" in type_str or "minus" in type_str or "sub" in type_str or ded_val > 0
+
+                    new_rows.append({
+                        "desc": desc_val,
+                        "no": max(1, no_val),
+                        "l": l_val,
+                        "b": b_val,
+                        "h": h_val,
+                        "ded": ded_val,
+                        "is_deduction_row": is_ded_row
+                    })
+
+                if new_rows:
+                    st.session_state[rows_state_key] = new_rows
+                    imported_rows_count += len(new_rows)
+
+        st.session_state['excel_import_success'] = f"✅ Excel မှ Earthwork Item များနှင့် အတိုင်းအတာ စာရင်း ({imported_rows_count}) ခုကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။"
+
+    except Exception as e:
+        err_msg = traceback.format_exc()
+        st.session_state['last_excel_error'] = f"❌ အမှားအယွင်း ရှိနေပါသည်: {e}\n\n{err_msg}"
 
 
 def export_measurement_template():
@@ -325,18 +565,18 @@ def main():
         page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
     )
 
-    # Top Header Layout with Language Selection (No Sidebar used)
-    col_header, col_lang = st.columns([4, 1])
-    
+    # Top Language Selector (Main UI Area - No Sidebar)
+    col_title_space, col_lang = st.columns([4, 1])
     with col_lang:
-        lang_choice = st.selectbox(
+        lang_choice = st.radio(
             "🌐 Language / ဘာသာစကား",
             options=["မြန်မာ", "English"],
-            index=0,
-            key="lang_select"
+            horizontal=True,
+            key="app_language"
         )
-        lang = "my" if lang_choice == "မြန်မာ" else "en"
-        t = TEXTS[lang]
+    
+    lang = "MM" if lang_choice == "မြန်မာ" else "EN"
+    t = TRANSLATIONS[lang]
 
     # CSS Customizations
     st.markdown("""
@@ -383,7 +623,7 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Main Banner Title based on Language Selection
+    # Banner
     st.markdown(f"""
         <div class="main-header">
             <h1>{t['title']}</h1>
@@ -395,13 +635,20 @@ def main():
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
-    ew_options = {f"[မြေကျင်း] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
+    prefix = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
+    ew_options = {f"{prefix} Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
 
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
 
-    # Tools Section
-    with st.expander(t['tools_header'], expanded=True):
+    if st.session_state.get('last_excel_error'):
+        st.error(st.session_state['last_excel_error'])
+
+    if st.session_state.get('excel_import_success'):
+        st.success(st.session_state['excel_import_success'])
+
+    # Tools
+    with st.expander(t['tools_title'], expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             t['tab_rates'], 
             t['tab_calc'], 
@@ -410,68 +657,74 @@ def main():
         ])
 
         with tab_rates:
-            st.subheader(t['rate_title'])
+            st.subheader(t['rates_subheader'])
             col_r1, col_r2 = st.columns(2)
             
             with col_r1:
-                st.markdown(f"**{t['labour_rates']}**")
-                rate_worker = st.number_input(t['worker'], value=25000.0, step=1000.0)
-                rate_digger = st.number_input(t['digger'], value=25000.0, step=1000.0)
-                rate_maistry = st.number_input(t['maistry'], value=30000.0, step=1000.0)
+                st.markdown(t['labour_rates'])
+                rate_worker = st.number_input(t['rate_worker'], value=25000.0, step=1000.0)
+                rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
+                rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
 
             with col_r2:
-                st.markdown(f"**{t['other_rates']}**")
-                rate_sand = st.number_input(t['sand'], value=45000.0, step=1000.0)
-                rate_carriage = st.number_input(t['carriage'], value=15000.0, step=1000.0)
+                st.markdown(t['other_rates'])
+                rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
+                rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
 
         with tab_calc:
-            st.subheader("🧮 Calculator")
-            calc_expr = st.text_input("Enter expression (e.g. 10*12.5 + 5):", value="")
+            st.subheader(t['calc_subheader'])
+            calc_expr = st.text_input(t['calc_input'], value="")
             if calc_expr:
                 try:
                     allowed_chars = "0123456789+-*/(). "
                     if all(char in allowed_chars for char in calc_expr):
                         res = eval(calc_expr)
-                        st.success(f"**Result = {res:,.4f}**")
+                        st.success(f"**{t['calc_ans']} = {res:,.4f}**")
                     else:
-                        st.error("Invalid input.")
+                        st.error(t['calc_err_char'])
                 except Exception:
-                    st.error("Error in expression.")
+                    st.error(t['calc_err_struct'])
 
         with tab_conv:
-            st.subheader("🔄 Unit Converter")
-            conv_type = st.selectbox("Select conversion:", [
-                "Inches -> Feet",
-                "Sft <-> Sq.m",
-                "Cft <-> Cu.m",
-                "Cft -> Sud (%Cft)"
+            st.subheader(t['conv_subheader'])
+            conv_type = st.selectbox(t['conv_select'], [
+                "Inches -> Feet (လက်မ -> ပေ)",
+                "Sft <-> Sq.m (စတုရန်းပေ <-> စတုရန်းမီတာ)",
+                "Cft <-> Cu.m (ကုဗပေ <-> ကုဗမီတာ)",
+                "Cft -> Sud / %Cft (ကုဗပေ -> ကျင်း)"
             ])
 
-            if conv_type == "Inches -> Feet":
-                inch_val = st.number_input("Inches:", min_value=0.0, value=6.0)
-                st.info(f"👉 **{inch_val} inches = {inch_val / 12.0:.3f} feet**")
+            if "Inches" in conv_type:
+                inch_val = st.number_input("Inches / လက်မ:", min_value=0.0, value=6.0)
+                st.info(f"👉 **{inch_val} inches = {inch_val / 12.0:.3f} ft**")
 
-            elif conv_type == "Sft <-> Sq.m":
-                sft_val = st.number_input("Sft:", min_value=0.0, value=100.0)
+            elif "Sft" in conv_type:
+                sft_val = st.number_input("Sft / စတုရန်းပေ:", min_value=0.0, value=100.0)
                 st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
 
-            elif conv_type == "Cft <-> Cu.m":
-                cft_val = st.number_input("Cft:", min_value=0.0, value=100.0)
+            elif "Cft <->" in conv_type:
+                cft_val = st.number_input("Cft / ကုဗပေ:", min_value=0.0, value=100.0)
                 st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
 
-            elif conv_type == "Cft -> Sud (%Cft)":
-                cft_val = st.number_input("Cft Quantity:", min_value=0.0, value=500.0)
-                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} Sud (%Cft)**")
+            elif "Sud" in conv_type:
+                cft_val = st.number_input("Cft / ကုဗပေ ပမာဏ:", min_value=0.0, value=500.0)
+                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} Sud (%Cft / ကျင်း)**")
 
         with tab_upload:
-            st.subheader("📥 Upload Measurement Excel")
+            st.subheader(t['upload_subheader'])
             template_buffer = export_measurement_template()
             st.download_button(
-                label="📄 Download Template",
+                label=t['download_template'],
                 data=template_buffer,
                 file_name="Earthwork_Measurement_Template.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+            st.divider()
+            uploaded_meas_file = st.file_uploader(t['upload_file_label'], type=["xlsx", "xls", "csv"])
+            if uploaded_meas_file is not None:
+                if st.button(t['btn_parse_excel'], type="primary", use_container_width=True):
+                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
+                    st.rerun()
 
     # Rate Fallbacks
     rate_worker = locals().get('rate_worker', 25000.0)
@@ -492,23 +745,23 @@ def main():
     }
 
     # Step 1: Selection
-    st.markdown(f'<div class="section-title">{t["step1_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{t["sec1_title"]}</div>', unsafe_allow_html=True)
     
     if not earthwork_items:
-        st.warning("⚠️️ '1 Earth Work.xls' file missing or empty.")
+        st.warning(t['no_excel_err'])
         return
 
-    ew_selected = st.multiselect(t["select_items"], list(ew_options.keys()), key="selected_ew")
-    selected_items_list = [ew_options[k] for k in ew_selected]
+    ew_selected = st.multiselect(t['select_items'], list(ew_options.keys()), key="selected_ew")
+    selected_items_list = [ew_options[k] for k in ew_selected if k in ew_options]
 
     if not selected_items_list:
-        st.info("💡 Please select Earthwork items from above.")
+        st.info(t['item_select_hint'])
         return
 
     st.divider()
 
     # Step 2: Detail Measurement
-    st.markdown(f'<div class="section-title">{t["step2_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{t["sec2_title"]}</div>', unsafe_allow_html=True)
 
     item_quantities = {}
     ls_custom_rates = {}
@@ -525,7 +778,7 @@ def main():
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
                 {
-                    "desc": "Grid 1",
+                    "desc": f"{t['grid_default']} 1",
                     "no": 1,
                     "l": 50.0 if is_sft else 10.0,
                     "b": 50.0 if is_sft else 10.0,
@@ -541,28 +794,28 @@ def main():
 
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
-                p_desc = c_desc.text_input("Description", value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
-                no_val = c_no.number_input("Qty", min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
-                ls_rate = c_rate.number_input("Lumpsum Rate (MMK)", min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
+                p_desc = c_desc.text_input(t['work_location'], value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
+                no_val = c_no.number_input(t['qty_count'], min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
+                ls_rate = c_rate.number_input(t['lumpsum_rate'], min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
                 
                 item_total_qty = float(no_val)
                 ls_custom_rates[item_no_str] = ls_rate
 
                 meas_rows.append({
-                    "Description": p_desc,
-                    "No.": no_val,
-                    "L": "-",
-                    "B": "-",
-                    "H": "-",
-                    "Type": "Addition",
-                    "Total": no_val
+                    t['work_location']: p_desc,
+                    t['qty_count']: no_val,
+                    t['len_ft']: "-",
+                    t['wid_ft']: "-",
+                    t['hei_ft']: "-",
+                    "Type": t['type_add'],
+                    "Result": no_val
                 })
             else:
                 current_rows = st.session_state[rows_state_key]
                 row_to_copy = None
 
                 for r_idx, r_data in enumerate(current_rows):
-                    st.markdown(f"**🔹 Line ({r_idx+1})**")
+                    st.markdown(f"**🔹 Row ({r_idx+1})**")
                     
                     if is_sft:
                         c_desc, c_no, c_l, c_b = st.columns([2.5, 1, 1, 1])
@@ -574,20 +827,24 @@ def main():
                         c_desc, c_no, c_l, c_b, c_h = st.columns([2.5, 1, 1, 1, 1])
                         c_ded, c_is_ded, c_cp = st.columns([1.5, 1.5, 1])
 
-                    p_desc = c_desc.text_input("Description", value=r_data["desc"], key=f"desc_{idx}_{r_idx}_{item_no_str}")
-                    no_val = c_no.number_input("No.", min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
-                    l_val = c_l.number_input("Length L (ft)", min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
+                    p_desc = c_desc.text_input(
+                        t['location_grid'],
+                        value=r_data["desc"],
+                        key=f"desc_{idx}_{r_idx}_{item_no_str}"
+                    )
+                    no_val = c_no.number_input(t['qty_count'], min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
+                    l_val = c_l.number_input(t['len_ft'], min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
                     
                     b_val = 0.0
                     if not is_rft:
-                        b_val = c_b.number_input("Breadth B (ft)", min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
+                        b_val = c_b.number_input(t['wid_ft'], min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
                     
                     h_val = 0.0
                     if not is_sft and not is_rft:
-                        h_val = c_h.number_input("Height/Depth H (ft)", min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
+                        h_val = c_h.number_input(t['hei_ft'], min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
                     
-                    ded_val = c_ded.number_input("Deduction", min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
-                    is_ded_row = c_is_ded.checkbox("➖ Is Deduction Row", value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
+                    ded_val = c_ded.number_input(t['deduction'], min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+                    is_ded_row = c_is_ded.checkbox(t['is_deduction_row'], value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
 
                     r_data["desc"] = p_desc
                     r_data["no"] = no_val
@@ -597,7 +854,7 @@ def main():
                     r_data["ded"] = ded_val
                     r_data["is_deduction_row"] = is_ded_row
 
-                    if c_cp.button("📋 Copy", key=f"copy_{idx}_{r_idx}_{item_no_str}"):
+                    if c_cp.button(t['btn_copy'], key=f"copy_{idx}_{r_idx}_{item_no_str}"):
                         row_to_copy = dict(r_data)
 
                     if is_rft:
@@ -617,14 +874,14 @@ def main():
                         sub_total_display = round(row_qty, 2)
 
                     meas_rows.append({
-                        "Description": p_desc,
-                        "No.": no_val,
-                        "L (ft)": l_val,
-                        "B (ft)": b_val if not is_rft else "-",
-                        "H (ft)": h_val if (not is_sft and not is_rft) else "-",
-                        "Deduction": ded_val,
-                        "Type": "➖ Deduction" if is_ded_row else "➕ Addition",
-                        "Sub-total": sub_total_display
+                        t['location_grid']: p_desc,
+                        t['qty_count']: no_val,
+                        t['len_ft']: l_val,
+                        t['wid_ft']: b_val if not is_rft else "-",
+                        t['hei_ft']: h_val if (not is_sft and not is_rft) else "-",
+                        t['deduction']: ded_val,
+                        "Type": t['type_ded'] if is_ded_row else t['type_add'],
+                        "Result": sub_total_display
                     })
                     st.markdown("---")
 
@@ -635,9 +892,9 @@ def main():
                     st.rerun()
 
                 col_add, col_rem, _ = st.columns([1.5, 1.5, 3])
-                if col_add.button("➕ Add Row", key=f"add_{idx}_{item_no_str}", type="primary"):
+                if col_add.button(t['btn_add_row'], key=f"add_{idx}_{item_no_str}", type="primary"):
                     st.session_state[rows_state_key].append({
-                        "desc": f"Grid {len(st.session_state[rows_state_key]) + 1}",
+                        "desc": f"{t['grid_default']} {len(st.session_state[rows_state_key]) + 1}",
                         "no": 1,
                         "l": 50.0 if is_sft else 10.0,
                         "b": 50.0 if is_sft else 10.0,
@@ -647,20 +904,22 @@ def main():
                     })
                     st.rerun()
 
-                if len(st.session_state[rows_state_key]) > 1 and col_rem.button("➖ Remove Row", key=f"rem_{idx}_{item_no_str}"):
+                if len(st.session_state[rows_state_key]) > 1 and col_rem.button(t['btn_rem_row'], key=f"rem_{idx}_{item_no_str}"):
                     st.session_state[rows_state_key].pop()
                     st.rerun()
 
             item_total_qty = max(0.0, item_total_qty)
             item_quantities[item_no_str] = item_total_qty
             
+            st.markdown(f"**{t['total_summary']}**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
-            st.info(f"💡 Item {item_no_str} Total Quantity = `{item_total_qty:,.2f} {item['unit']}`")
+            
+            st.info(f"💡 **Item {item_no_str} Total = `{item_total_qty:,.2f} {item['unit']}`**")
 
     # Excel Download
     meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
     st.download_button(
-        label=t["download_meas"],
+        label=t['dl_meas_excel'],
         data=meas_excel_buffer,
         file_name="Earthwork_Measurement_Sheet.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -670,7 +929,7 @@ def main():
     st.divider()
 
     # Step 3: Cost Analysis
-    st.markdown(f'<div class="section-title">{t["step3_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{t["sec3_title"]}</div>', unsafe_allow_html=True)
 
     grand_total = 0.0
     material_summary = {}
@@ -689,12 +948,12 @@ def main():
         item_total_cost = 0.0
 
         display_rows.append({
-            "Item No": item_no,
-            "Description": item['title'],
-            "Unit": item['unit'],
-            "Quantity": f"{measured_qty:,.2f}",
-            "Rate (MMK)": "",
-            "Amount (MMK)": ""
+            t['item_no_col']: item_no,
+            t['particular']: item['title'],
+            t['unit']: item['unit'],
+            t['quantity']: f"{measured_qty:,.2f}",
+            t['rate_mmk']: "",
+            t['amount_mmk']: ""
         })
 
         if is_lumpsum and not item['breakdown']:
@@ -703,12 +962,12 @@ def main():
             item_total_cost = amount
 
             display_rows.append({
-                "Item No": "",
-                "Description": f"  └ {item['title']}",
-                "Unit": item['unit'],
-                "Quantity": f"{measured_qty:,.2f}",
-                "Rate (MMK)": f"{ls_rate:,.2f}",
-                "Amount (MMK)": f"{amount:,.2f}"
+                t['item_no_col']: "",
+                t['particular']: f"  └ {item['title']}",
+                t['unit']: item['unit'],
+                t['quantity']: f"{measured_qty:,.2f}",
+                t['rate_mmk']: f"{ls_rate:,.2f}",
+                t['amount_mmk']: f"{amount:,.2f}"
             })
 
             labour_summary[item['title']] = {
@@ -766,39 +1025,39 @@ def main():
 
             if mat_breakdown:
                 display_rows.append({
-                    "Item No": "", "Description": "  📦 Material Cost", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Amount (MMK)": ""
+                    t['item_no_col']: "", t['particular']: t['mat_cost_title'], t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
                 })
                 for m in mat_breakdown:
                     display_rows.append({
-                        "Item No": "",
-                        "Description": f"      {m['part']}",
-                        "Unit": m['unit'],
-                        "Quantity": f"{m['qty']:,.2f}",
-                        "Rate (MMK)": f"{m['rate']:,.2f}" if m['rate'] > 0 else "-",
-                        "Amount (MMK)": f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
+                        t['item_no_col']: "",
+                        t['particular']: f"      {m['part']}",
+                        t['unit']: m['unit'],
+                        t['quantity']: f"{m['qty']:,.2f}",
+                        t['rate_mmk']: f"{m['rate']:,.2f}" if m['rate'] > 0 else "-",
+                        t['amount_mmk']: f"{m['amount']:,.2f}" if m['amount'] > 0 else "-"
                     })
 
             if lab_breakdown:
                 display_rows.append({
-                    "Item No": "", "Description": "  👷 Labour Cost", "Unit": "", "Quantity": "", "Rate (MMK)": "", "Amount (MMK)": ""
+                    t['item_no_col']: "", t['particular']: t['lab_cost_title'], t['unit']: "", t['quantity']: "", t['rate_mmk']: "", t['amount_mmk']: ""
                 })
                 for l in lab_breakdown:
                     display_rows.append({
-                        "Item No": "",
-                        "Description": f"      {l['part']}",
-                        "Unit": l['unit'],
-                        "Quantity": f"{l['qty']:,.2f}",
-                        "Rate (MMK)": f"{l['rate']:,.2f}",
-                        "Amount (MMK)": f"{l['amount']:,.2f}"
+                        t['item_no_col']: "",
+                        t['particular']: f"      {l['part']}",
+                        t['unit']: l['unit'],
+                        t['quantity']: f"{l['qty']:,.2f}",
+                        t['rate_mmk']: f"{l['rate']:,.2f}",
+                        t['amount_mmk']: f"{l['amount']:,.2f}"
                     })
 
         display_rows.append({
-            "Item No": "",
-            "Description": "  💰 Total Cost",
-            "Unit": "",
-            "Quantity": "",
-            "Rate (MMK)": "",
-            "Amount (MMK)": f"**{item_total_cost:,.2f}**"
+            t['item_no_col']: "",
+            t['particular']: t['total_item_cost'],
+            t['unit']: "",
+            t['quantity']: "",
+            t['rate_mmk']: "",
+            t['amount_mmk']: f"**{item_total_cost:,.2f}**"
         })
 
         st.dataframe(pd.DataFrame(display_rows), use_container_width=True, hide_index=True)
@@ -807,47 +1066,51 @@ def main():
     st.divider()
 
     # Step 4: BOQ Summary
-    st.markdown(f'<div class="section-title">{t["step4_title"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="section-title">{t["sec4_title"]}</div>', unsafe_allow_html=True)
 
-    st.markdown("### 📦 1. Material Summary")
+    st.markdown(f"### {t['mat_boq_title']}")
     mat_rows = []
     total_mat_cost = 0.0
     for idx, (p_name, data) in enumerate(material_summary.items(), start=1):
         mat_rows.append({
-            "No.": idx,
-            "Material": p_name,
-            "Unit": data["unit"],
-            "Quantity": f"{data['qty']:,.2f}",
-            "Rate (MMK)": f"{data['rate']:,.2f}",
-            "Amount (MMK)": f"{data['amount']:,.2f}"
+            t['sr_no']: idx,
+            t['mat_name']: p_name,
+            t['unit']: data["unit"],
+            t['req_qty']: f"{data['qty']:,.2f}",
+            t['rate_mmk']: f"{data['rate']:,.2f}",
+            t['total_mmk']: f"{data['amount']:,.2f}"
         })
         total_mat_cost += data["amount"]
 
     if mat_rows:
         st.table(pd.DataFrame(mat_rows))
+    else:
+        st.info(t['no_mat_cost'])
 
     st.divider()
 
-    st.markdown("### 👷 2. Labour Summary")
+    st.markdown(f"### {t['lab_boq_title']}")
     lab_rows = []
     total_lab_cost = 0.0
     for idx, (p_name, data) in enumerate(labour_summary.items(), start=1):
         lab_rows.append({
-            "No.": idx,
-            "Labour Type": p_name,
-            "Unit": data["unit"],
-            "Quantity": f"{data['qty']:,.2f}",
-            "Rate (MMK)": f"{data['rate']:,.2f}",
-            "Amount (MMK)": f"{data['amount']:,.2f}"
+            t['sr_no']: idx,
+            t['particular']: p_name,
+            t['unit']: data["unit"],
+            t['quantity']: f"{data['qty']:,.2f}",
+            t['rate_mmk']: f"{data['rate']:,.2f}",
+            t['total_mmk']: f"{data['amount']:,.2f}"
         })
         total_lab_cost += data["amount"]
 
     if lab_rows:
         st.table(pd.DataFrame(lab_rows))
+    else:
+        st.info(t['no_lab_cost'])
 
     boq_excel_buffer = export_boq_summary_excel(material_summary, labour_summary)
     st.download_button(
-        label=t["download_boq"],
+        label=t['dl_boq_excel'],
         data=boq_excel_buffer,
         file_name="Earthwork_BOQ_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -858,9 +1121,9 @@ def main():
 
     # Dashboard Metrics
     col_m1, col_m2, col_m3 = st.columns(3)
-    col_m1.metric(t["total_mat"], f"{total_mat_cost:,.2f} MMK")
-    col_m2.metric(t["total_lab"], f"{total_lab_cost:,.2f} MMK")
-    col_m3.metric(t["grand_total"], f"{grand_total:,.2f} MMK")
+    col_m1.metric(t['total_mat_val'], f"{total_mat_cost:,.2f} MMK")
+    col_m2.metric(t['total_lab_val'], f"{total_lab_cost:,.2f} MMK")
+    col_m3.metric(t['grand_total_val'], f"{grand_total:,.2f} MMK")
 
 
 if __name__ == "__main__":
