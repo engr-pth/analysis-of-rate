@@ -18,7 +18,7 @@ LABOUR_KEYWORDS = [
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
-# Item ခေါင်းစဉ်များအတွက် ဘာသာပြန် Dictionary
+# Item ခေါင်းစဉ်များအတွက် ဘာသာပြန် Dictionary (Item 22 ဖြုတ်ထားပါသည်)
 MM_ITEM_TITLES = {
     "1": "မြေပြင်ရှင်းလင်းခြင်းနှင့် သစ်ငုတ်တူးခြင်း",
     "2": "အနက် ၅ ပေ မပိုသော သာမန်မြေကျင်း တူးဖော်ခြင်း",
@@ -315,7 +315,8 @@ def parse_excel_rates(file_path):
         unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
         qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
 
-        if item_no in ['10', '10.0', '11', '11.0']:
+        # Item 22 အပါအဝင် မလိုလိုသော Item များကို ကျော်မည်
+        if item_no in ['10', '10.0', '11', '11.0', '22', '22.0']:
             continue
 
         if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
@@ -1162,22 +1163,24 @@ def main():
             extra_worker_depth = 0.0
             extra_worker_lead = 0.0
 
-            if item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
-                rows_state_key = f"rows_data_{item_no}_{idx}"
-                current_rows = st.session_state.get(rows_state_key, [])
+            rows_state_key = f"rows_data_{item_no}_{idx}"
+            current_rows = st.session_state.get(rows_state_key, [])
 
-                for r in current_rows:
-                    if r.get('is_deduction_row'):
-                        continue
-                    
-                    no_val = float(r.get('no', 1))
-                    l_val = float(r.get('l', 0.0))
-                    b_val = float(r.get('b', 0.0))
-                    h_val = float(r.get('h', 0.0))
-                    ded_val = float(r.get('ded', 0.0))
+            # Dynamic Additional Lift/Lead Calculation Logic
+            for r in current_rows:
+                if r.get('is_deduction_row'):
+                    continue
+                
+                no_val = float(r.get('no', 1))
+                l_val = float(r.get('l', 0.0))
+                b_val = float(r.get('b', 0.0))
+                h_val = float(r.get('h', 0.0))
+                ded_val = float(r.get('ded', 0.0))
 
-                    row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
+                row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
 
+                # Item 2, 3, 4 (Initial 5 ft depth)
+                if item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
                     if h_val > 5.0:
                         extra_h = h_val - 5.0
                         depth_steps = math.ceil(extra_h / 5.0)
@@ -1188,6 +1191,20 @@ def main():
                         extra_dist = max_dist - 100.0
                         lead_steps = math.ceil(extra_dist / 100.0)
                         extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
+
+                # Item 20 (Initial 10 ft depth, Add 3.38 workers per additional 5 ft lift)
+                elif item_no in ['20', '20.0']:
+                    if h_val > 10.0:
+                        extra_h = h_val - 10.0
+                        depth_steps = math.ceil(extra_h / 5.0)
+                        extra_worker_depth += depth_steps * 3.38 * (row_cft / 100.0)
+
+                # Item 21 (Initial 10 ft depth, Add 3.00 workers per additional 5 ft lift)
+                elif item_no in ['21', '21.0']:
+                    if h_val > 10.0:
+                        extra_h = h_val - 10.0
+                        depth_steps = math.ceil(extra_h / 5.0)
+                        extra_worker_depth += depth_steps * 3.0 * (row_cft / 100.0)
 
             for row in item['breakdown']:
                 part = row['particular']
@@ -1200,7 +1217,7 @@ def main():
                     req_qty = (std_qty / std_base_qty) * measured_qty
 
                 part_lower = part.lower()
-                if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
+                if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0', '20', '20.0', '21', '21.0']:
                     req_qty += (extra_worker_depth + extra_worker_lead)
 
                 u_str = str(u).lower().strip()
