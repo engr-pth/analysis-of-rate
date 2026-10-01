@@ -18,7 +18,7 @@ LABOUR_KEYWORDS = [
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
-# Item ခေါင်းစဉ်များအတွက် မြန်မာဘာသာပြန် Dictionary
+# Item ခေါင်းစဉ်များအတွက် ဘာသာပြန် Dictionary
 MM_ITEM_TITLES = {
     "1": "မြေပြင်ရှင်းလင်းခြင်းနှင့် သစ်ငုတ်တူးခြင်း",
     "2": "အနက် ၅ ပေ မပိုသော သာမန်မြေကျင်း တူးဖော်ခြင်း",
@@ -32,6 +32,82 @@ MM_ITEM_TITLES = {
     "12": "ကျောက်စရစ်/မြေကျင်း ရေထုတ်ယူခြင်း (Dewatering Work)",
     "13": "အခြား အထွေထွေ မြေကျင်းပြင်ဆင်ခြင်း လုပ်ငန်းများ"
 }
+
+# Material / Labour Description ဘာသာပြန် Dictionary
+PARTICULAR_TRANSLATIONS = {
+    "MM": {
+        "Worker": "အလုပ်သမား",
+        "Worker for carrying and ramming": "မြေသယ်/မြေရိုက် အလုပ်သမား",
+        "Worker for watering": "ရေလောင်း အလုပ်သမား",
+        "Worker for carrying": "သယ်ယူပို့ဆောင်ရေး အလုပ်သမား",
+        "Digger": "မြေကျင်းတူး အလုပ်သမား",
+        "Maistry": "ခေါင်းဆောင် / မေစတရီ",
+        "Surveyor": "တိုင်းတာရေးမှူး / Surveyor",
+        "Carpenter": "လက်သမား",
+        "Timber": "သစ်သား",
+        "Wire Nails": "သံရိုက် / သံမှို",
+        "Water Charges": "ရေဖိုးရေခ",
+        "Sand": "သဲ",
+        "Carriage to site": "လုပ်ငန်းခွင်သို့ သယ်ယူခ"
+    },
+    "EN": {
+        "Worker": "Worker",
+        "Worker for carrying and ramming": "Worker for carrying and ramming",
+        "Worker for watering": "Worker for watering",
+        "Worker for carrying": "Worker for carrying",
+        "Digger": "Digger",
+        "Maistry": "Maistry / Supervisor",
+        "Surveyor": "Surveyor",
+        "Carpenter": "Carpenter",
+        "Timber": "Timber",
+        "Wire Nails": "Wire Nails",
+        "Water Charges": "Water Charges",
+        "Sand": "Sand",
+        "Carriage to site": "Carriage to site"
+    }
+}
+
+# Unit ဘာသာပြန် Dictionary
+UNIT_TRANSLATIONS = {
+    "MM": {
+        "100 Cft": "၁၀၀ ကုဗပေ",
+        "Cft": "ကုဗပေ",
+        "Sft": "စတုရန်းပေ",
+        "Rft": "ပေအရှည်",
+        "Ton": "တန်",
+        "Viss": "ပိဿာ",
+        "L-S": "တစ်စုတစ်ဝေး",
+        "LS": "တစ်စုတစ်ဝေး",
+        "Job": "လုပ်ငန်း",
+        "Hole": "တွင်း",
+        "Sud": "ကျင်း"
+    },
+    "EN": {
+        "100 Cft": "100 Cft",
+        "Cft": "Cft",
+        "Sft": "Sft",
+        "Rft": "Rft",
+        "Ton": "Ton",
+        "Viss": "Viss",
+        "L-S": "L-S",
+        "LS": "L-S",
+        "Job": "Job",
+        "Hole": "Hole",
+        "Sud": "Sud (%Cft)"
+    }
+}
+
+def translate_unit(unit_str, lang):
+    if not unit_str:
+        return ""
+    u_clean = str(unit_str).strip()
+    return UNIT_TRANSLATIONS.get(lang, {}).get(u_clean, u_clean)
+
+def translate_particular(part_str, lang):
+    if not part_str:
+        return ""
+    p_clean = str(part_str).strip()
+    return PARTICULAR_TRANSLATIONS.get(lang, {}).get(p_clean, p_clean)
 
 # Multi-language dictionary
 TRANSLATIONS = {
@@ -63,6 +139,14 @@ TRANSLATIONS = {
         "calc_err_struct": "တွက်ချက်မှု အမှားရှိနေပါသည် structure ကို ပြန်စစ်ပါ။",
         "conv_subheader": "🔄 ယူနစ် အပြောင်းအလဲ",
         "conv_select": "ပြောင်းလိုသည်ကို ရွေးပါ:",
+        "conv_inch_ft": "Inches -> Feet (လက်မ -> ပေ)",
+        "conv_sft_sqm": "Sft <-> Sq.m (စတုရန်းပေ <-> စတုရန်းမီတာ)",
+        "conv_cft_cum": "Cft <-> Cu.m (ကုဗပေ <-> ကုဗမီတာ)",
+        "conv_cft_sud": "Cft -> Sud / %Cft (ကုဗပေ -> ကျင်း)",
+        "conv_inch_label": "Inches / လက်မ:",
+        "conv_sft_label": "Sft / စတုရန်းပေ:",
+        "conv_cft_label": "Cft / ကုဗပေ:",
+        "conv_sud_label": "Cft / ကုဗပေ ပမာဏ:",
         "upload_subheader": "📥 တိုင်းတာပြီး Earthwork Excel ဖိုင်တင်ရန်",
         "download_template": "📄 Earthwork နမူနာ ပုံစံ (Template) ရယူရန်",
         "upload_file_label": "Excel / CSV ဖိုင် ရွေးပါ:",
@@ -130,11 +214,11 @@ TRANSLATIONS = {
         "rate_maistry": "Maistry / Supervisor (MMK)",
         "rate_surveyor": "Surveyor (MMK)",
         "rate_carpenter": "Carpenter (MMK)",
-        "rate_timber": "Timber (per Ton)",
-        "rate_nails": "Wire Nails (per Viss)",
+        "rate_timber": "Timber (per Ton MMK)",
+        "rate_nails": "Wire Nails (per Viss MMK)",
         "rate_water": "Water Charges (L-s MMK)",
-        "rate_sand": "Sand Filling (Sud / 100 Cft)",
-        "rate_carriage": "Earth/Sand Carriage (Sud / 100 Cft)",
+        "rate_sand": "Sand Filling (per Sud MMK)",
+        "rate_carriage": "Earth/Sand Carriage (per Sud MMK)",
         "calc_subheader": "🧮 Quick Calculator",
         "calc_input": "Enter expression (e.g. 10*12.5 + 5):",
         "calc_ans": "Result",
@@ -142,6 +226,14 @@ TRANSLATIONS = {
         "calc_err_struct": "Calculation error. Please check the expression structure.",
         "conv_subheader": "🔄 Unit Converter",
         "conv_select": "Select conversion type:",
+        "conv_inch_ft": "Inches -> Feet",
+        "conv_sft_sqm": "Sft <-> Sq.m",
+        "conv_cft_cum": "Cft <-> Cu.m",
+        "conv_cft_sud": "Cft -> Sud / %Cft",
+        "conv_inch_label": "Inches:",
+        "conv_sft_label": "Sft:",
+        "conv_cft_label": "Cft:",
+        "conv_sud_label": "Cft Quantity:",
         "upload_subheader": "📥 Import Measured Earthwork Excel File",
         "download_template": "📄 Download Earthwork Template",
         "upload_file_label": "Select Excel / CSV File:",
@@ -202,7 +294,7 @@ def parse_excel_rates(file_path):
     try:
         df_raw = pd.read_excel(file_path, dtype=str)
     except Exception as e:
-        st.error(f"ဖိုင်ဖတ်၍ မရပါ ({file_path}): {e}")
+        st.error(f"Error reading file ({file_path}): {e}")
         return []
 
     items = []
@@ -306,7 +398,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
         col_type = next((c for c in df.columns if 'type' in c), None)
 
         if not col_item or not col_desc:
-            st.session_state['last_excel_error'] = "❌ တင်သွင်းသော Excel ဖိုင်တွင် 'Item No.' သို့မဟုတ် 'Particular Description' Column ကို ရှာမတွေ့ပါ။"
+            st.session_state['last_excel_error'] = "❌ Excel file missing 'Item No.' or 'Particular Description' column."
             return
 
         def clean_str_item(val):
@@ -329,7 +421,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
         excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
 
         if not excel_item_nos:
-            st.session_state['last_excel_error'] = "⚠ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
+            st.session_state['last_excel_error'] = "⚠ No valid measurement data found in Excel file."
             return
 
         selected_ew = []
@@ -389,11 +481,11 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
                     st.session_state[rows_state_key] = new_rows
                     imported_rows_count += len(new_rows)
 
-        st.session_state['excel_import_success'] = f"✅ Excel မှ Earthwork Item များနှင့် အတိုင်းအတာ စာရင်း ({imported_rows_count}) ခုကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။"
+        st.session_state['excel_import_success'] = f"✅ Successfully imported {imported_rows_count} measurement items from Excel."
 
     except Exception as e:
         err_msg = traceback.format_exc()
-        st.session_state['last_excel_error'] = f"❌ အမှားအယွင်း ရှိနေပါသည်: {e}\n\n{err_msg}"
+        st.session_state['last_excel_error'] = f"❌ Import Error: {e}\n\n{err_msg}"
 
 
 def export_measurement_template():
@@ -430,7 +522,7 @@ def export_measurement_template():
     return buffer
 
 
-def export_measurement_sheet_excel(selected_items_list, st_session_state):
+def export_measurement_sheet_excel(selected_items_list, st_session_state, lang):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Earthwork Measurement"
@@ -458,7 +550,8 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
         count_header = "Holes Count" if is_hole else "No."
         headers = ["Item No.", "Particular Description", count_header, "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
 
-        ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['display_title']} ({item['unit']})").font = Font(bold=True, size=11)
+        display_unit = translate_unit(item['unit'], lang)
+        ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['display_title']} ({display_unit})").font = Font(bold=True, size=11)
         ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=9)
         row_idx += 1
 
@@ -509,7 +602,7 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
 
         end_data_row = row_idx - 1
 
-        ws.cell(row=row_idx, column=2, value=f"Total Quantity ({item['unit']})").font = Font(bold=True)
+        ws.cell(row=row_idx, column=2, value=f"Total Quantity ({display_unit})").font = Font(bold=True)
         ws.cell(row=row_idx, column=9, value=f"=MAX(0, SUM(I{start_data_row}:I{end_data_row}))").font = Font(bold=True)
         ws.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFF2CC", fill_type="solid")
         row_idx += 2
@@ -666,7 +759,7 @@ def main():
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
-    # ဘာသာစကားပေါ်မူတည်၍ Title များကို dynamic ပြောင်းလဲခြင်း
+    # ဘာသာစကားပေါ်မူတည်၍ Title နှင့် Unit များကို Dynamic ပြောင်းလဲခြင်း
     prefix = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
     ew_options = {}
     for item in earthwork_items:
@@ -676,8 +769,11 @@ def main():
         else:
             display_title = item['title']
         
+        display_unit = translate_unit(item['unit'], lang)
+
         item_copy = dict(item)
         item_copy['display_title'] = display_title
+        item_copy['display_unit'] = display_unit
         key_str = f"{prefix} Item {item['item_no']} - {display_title}"
         ew_options[key_str] = item_copy
 
@@ -735,27 +831,27 @@ def main():
         with tab_conv:
             st.subheader(t['conv_subheader'])
             conv_type = st.selectbox(t['conv_select'], [
-                "Inches -> Feet (လက်မ -> ပေ)",
-                "Sft <-> Sq.m (စတုရန်းပေ <-> စတုရန်းမီတာ)",
-                "Cft <-> Cu.m (ကုဗပေ <-> ကုဗမီတာ)",
-                "Cft -> Sud / %Cft (ကုဗပေ -> ကျင်း)"
+                t['conv_inch_ft'],
+                t['conv_sft_sqm'],
+                t['conv_cft_cum'],
+                t['conv_cft_sud']
             ])
 
-            if "Inches" in conv_type:
-                inch_val = st.number_input("Inches / လက်မ:", min_value=0.0, value=6.0)
+            if conv_type == t['conv_inch_ft']:
+                inch_val = st.number_input(t['conv_inch_label'], min_value=0.0, value=6.0)
                 st.info(f"👉 **{inch_val} inches = {inch_val / 12.0:.3f} ft**")
 
-            elif "Sft" in conv_type:
-                sft_val = st.number_input("Sft / စတုရန်းပေ:", min_value=0.0, value=100.0)
+            elif conv_type == t['conv_sft_sqm']:
+                sft_val = st.number_input(t['conv_sft_label'], min_value=0.0, value=100.0)
                 st.info(f"👉 **{sft_val:,.2f} Sft = {sft_val / 10.764:.2f} Sq.m**")
 
-            elif "Cft <->" in conv_type:
-                cft_val = st.number_input("Cft / ကုဗပေ:", min_value=0.0, value=100.0)
+            elif conv_type == t['conv_cft_cum']:
+                cft_val = st.number_input(t['conv_cft_label'], min_value=0.0, value=100.0)
                 st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
 
-            elif "Sud" in conv_type:
-                cft_val = st.number_input("Cft / ကုဗပေ ပမာဏ:", min_value=0.0, value=500.0)
-                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} Sud (%Cft / ကျင်း)**")
+            elif conv_type == t['conv_cft_sud']:
+                cft_val = st.number_input(t['conv_sud_label'], min_value=0.0, value=500.0)
+                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} Sud (%Cft)**")
 
         with tab_upload:
             st.subheader(t['upload_subheader'])
@@ -834,6 +930,7 @@ def main():
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
         label_no = t['hole_count'] if is_hole else t['qty_count']
+        display_unit = item['display_unit']
 
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
@@ -848,7 +945,7 @@ def main():
                 }
             ]
 
-        with st.expander(f"📌 Item {item['item_no']} - {item['display_title']} [{item['unit']}]", expanded=True):
+        with st.expander(f"📌 Item {item['item_no']} - {item['display_title']} [{display_unit}]", expanded=True):
             meas_rows = []
             item_total_qty = 0.0
 
@@ -981,9 +1078,9 @@ def main():
             st.markdown(f"**{t['total_summary']}**")
             st.dataframe(pd.DataFrame(meas_rows), use_container_width=True)
             
-            st.info(f"💡 **Item {item_no_str} Total = `{item_total_qty:,.2f} {item['unit']}`**")
+            st.info(f"💡 **Item {item_no_str} Total = `{item_total_qty:,.2f} {display_unit}`**")
 
-    meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
+    meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state, lang)
     st.download_button(
         label=t['dl_meas_excel'],
         data=meas_excel_buffer,
@@ -1004,6 +1101,7 @@ def main():
     for idx, item in enumerate(selected_items_list):
         item_no = str(item['item_no'])
         measured_qty = item_quantities.get(item_no, 0.0)
+        display_unit = item['display_unit']
 
         st.markdown(f"#### Item {item_no} - {item['display_title']}")
 
@@ -1016,7 +1114,7 @@ def main():
         display_rows.append({
             t['item_no_col']: item_no,
             t['particular']: item['display_title'],
-            t['unit']: item['unit'],
+            t['unit']: display_unit,
             t['quantity']: f"{measured_qty:,.2f}",
             t['rate_mmk']: "",
             t['amount_mmk']: ""
@@ -1030,14 +1128,14 @@ def main():
             display_rows.append({
                 t['item_no_col']: "",
                 t['particular']: f"  └ {item['display_title']}",
-                t['unit']: item['unit'],
+                t['unit']: display_unit,
                 t['quantity']: f"{measured_qty:,.2f}",
                 t['rate_mmk']: f"{ls_rate:,.2f}",
                 t['amount_mmk']: f"{amount:,.2f}"
             })
 
             labour_summary[item['display_title']] = {
-                "unit": item['unit'],
+                "unit": display_unit,
                 "qty": measured_qty,
                 "rate": ls_rate,
                 "amount": amount
@@ -1106,9 +1204,12 @@ def main():
 
                 is_labour = any(k in part_lower for k in LABOUR_KEYWORDS)
 
+                disp_part = translate_particular(part, lang)
+                disp_unit = translate_unit(u, lang)
+
                 row_data = {
-                    "part": part,
-                    "unit": u,
+                    "part": disp_part,
+                    "unit": disp_unit,
                     "qty": req_qty,
                     "rate": unit_rate,
                     "amount": amount
@@ -1120,11 +1221,11 @@ def main():
                     mat_breakdown.append(row_data)
 
                 target_dict = labour_summary if is_labour else material_summary
-                if part not in target_dict:
-                    target_dict[part] = {"unit": u, "qty": req_qty, "rate": unit_rate, "amount": amount}
+                if disp_part not in target_dict:
+                    target_dict[disp_part] = {"unit": disp_unit, "qty": req_qty, "rate": unit_rate, "amount": amount}
                 else:
-                    target_dict[part]["qty"] += req_qty
-                    target_dict[part]["amount"] += amount
+                    target_dict[disp_part]["qty"] += req_qty
+                    target_dict[disp_part]["amount"] += amount
 
             if mat_breakdown:
                 display_rows.append({
