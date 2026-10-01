@@ -23,7 +23,7 @@ TRANSLATIONS = {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ",
         "tools_title": "🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)",
-        "tab_rates": "⚙️️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
+        "tab_rates": "⚙ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး",
         "tab_calc": "🧮 ဂဏန်းတွက်စက်",
         "tab_conv": "🔄 ယူနစ်ပြောင်းရန်",
         "tab_upload": "📥 Excel ဖိုင်တင်ရန်",
@@ -59,7 +59,7 @@ TRANSLATIONS = {
         "work_location": "လုပ်ငန်းနေရာ / အမျိုးအစား",
         "location_grid": "နေရာ / အကွက်အမည်",
         "grid_default": "အကွက်",
-        "qty_count": "အရေအတွက်",
+        "qty_count": "တွင်းအရေအတွက် (Holes Count)",
         "lumpsum_rate": "တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)",
         "len_ft": "အရှည် L (ပေ)",
         "wid_ft": "အနံ B (ပေ)",
@@ -137,7 +137,7 @@ TRANSLATIONS = {
         "work_location": "Work Location / Type",
         "location_grid": "Location / Grid Name",
         "grid_default": "Grid",
-        "qty_count": "Quantity",
+        "qty_count": "Holes Count",
         "lumpsum_rate": "Lumpsum Rate (MMK)",
         "len_ft": "Length L (ft)",
         "wid_ft": "Breadth B (ft)",
@@ -308,7 +308,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
         excel_item_nos = valid_rows['clean_item_no'].unique().tolist()
 
         if not excel_item_nos:
-            st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
+            st.session_state['last_excel_error'] = "⚠️️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
         selected_ew = []
@@ -432,6 +432,7 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
 
         unit_str = str(item['unit']).lower().strip()
         is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+        is_hole = 'hole' in unit_str
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
@@ -461,13 +462,15 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
                 ws.cell(row=row_idx, column=1, value=item_no_str)
                 ws.cell(row=row_idx, column=2, value=r['desc'])
                 ws.cell(row=row_idx, column=3, value=r['no'])
-                ws.cell(row=row_idx, column=4, value=r['l'])
-                ws.cell(row=row_idx, column=5, value=r['b'] if not is_rft else "-")
-                ws.cell(row=row_idx, column=6, value=r['h'] if (not is_sft and not is_rft) else "-")
-                ws.cell(row=row_idx, column=7, value=r['ded'])
+                ws.cell(row=row_idx, column=4, value=r['l'] if not is_hole else "-")
+                ws.cell(row=row_idx, column=5, value=r['b'] if (not is_rft and not is_hole) else "-")
+                ws.cell(row=row_idx, column=6, value=r['h'] if (not is_sft and not is_rft and not is_hole) else "-")
+                ws.cell(row=row_idx, column=7, value=r['ded'] if not is_hole else 0)
                 ws.cell(row=row_idx, column=8, value="Deduction" if r.get("is_deduction_row") else "Addition")
 
-                if is_rft:
+                if is_hole:
+                    mult_expr = f"C{row_idx}"
+                elif is_rft:
                     mult_expr = f"C{row_idx}*D{row_idx}"
                 elif is_sft:
                     mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}"
@@ -798,6 +801,7 @@ def main():
 
         unit_str = str(item['unit']).lower().strip()
         is_lumpsum = 'l-s' in unit_str or 'ls' in unit_str or 'lump' in unit_str or 'job' in unit_str
+        is_hole = 'hole' in unit_str
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
@@ -806,9 +810,9 @@ def main():
                 {
                     "desc": f"{t['grid_default']} 1",
                     "no": 1,
-                    "l": 50.0 if is_sft else 10.0,
-                    "b": 50.0 if is_sft else 10.0,
-                    "h": 5.0,
+                    "l": 50.0 if is_sft else (10.0 if not is_hole else 0.0),
+                    "b": 50.0 if is_sft else (10.0 if not is_hole else 0.0),
+                    "h": 5.0 if not is_hole else 0.0,
                     "ded": 0.0,
                     "is_deduction_row": False
                 }
@@ -843,7 +847,9 @@ def main():
                 for r_idx, r_data in enumerate(current_rows):
                     st.markdown(f"**🔹 Row ({r_idx+1})**")
                     
-                    if is_sft:
+                    if is_hole:
+                        c_desc, c_no, c_is_ded, c_cp = st.columns([4, 2, 2, 1])
+                    elif is_sft:
                         c_desc, c_no, c_l, c_b = st.columns([2.5, 1, 1, 1])
                         c_ded, c_is_ded, c_cp = st.columns([1.5, 1.5, 1])
                     elif is_rft:
@@ -859,17 +865,20 @@ def main():
                         key=f"desc_{idx}_{r_idx}_{item_no_str}"
                     )
                     no_val = c_no.number_input(t['qty_count'], min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
-                    l_val = c_l.number_input(t['len_ft'], min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
                     
+                    l_val = 0.0
                     b_val = 0.0
-                    if not is_rft:
-                        b_val = c_b.number_input(t['wid_ft'], min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
-                    
                     h_val = 0.0
-                    if not is_sft and not is_rft:
-                        h_val = c_h.number_input(t['hei_ft'], min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
-                    
-                    ded_val = c_ded.number_input(t['deduction'], min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+                    ded_val = 0.0
+
+                    if not is_hole:
+                        l_val = c_l.number_input(t['len_ft'], min_value=0.0, value=float(r_data["l"]), key=f"l_{idx}_{r_idx}_{item_no_str}")
+                        if not is_rft:
+                            b_val = c_b.number_input(t['wid_ft'], min_value=0.0, value=float(r_data["b"]), key=f"b_{idx}_{r_idx}_{item_no_str}")
+                        if not is_sft and not is_rft:
+                            h_val = c_h.number_input(t['hei_ft'], min_value=0.0, value=float(r_data["h"]), key=f"h_{idx}_{r_idx}_{item_no_str}")
+                        ded_val = c_ded.number_input(t['deduction'], min_value=0.0, value=float(r_data.get("ded", 0.0)), key=f"ded_{idx}_{r_idx}_{item_no_str}")
+
                     is_ded_row = c_is_ded.checkbox(t['is_deduction_row'], value=r_data.get("is_deduction_row", False), key=f"is_ded_{idx}_{r_idx}_{item_no_str}")
 
                     r_data["desc"] = p_desc
@@ -883,7 +892,9 @@ def main():
                     if c_cp.button(t['btn_copy'], key=f"copy_{idx}_{r_idx}_{item_no_str}"):
                         row_to_copy = dict(r_data)
 
-                    if is_rft:
+                    if is_hole:
+                        gross_qty = float(no_val)
+                    elif is_rft:
                         gross_qty = no_val * l_val
                     elif is_sft:
                         gross_qty = no_val * l_val * b_val
@@ -902,10 +913,10 @@ def main():
                     meas_rows.append({
                         t['location_grid']: p_desc,
                         t['qty_count']: no_val,
-                        t['len_ft']: l_val,
-                        t['wid_ft']: b_val if not is_rft else "-",
-                        t['hei_ft']: h_val if (not is_sft and not is_rft) else "-",
-                        t['deduction']: ded_val,
+                        t['len_ft']: l_val if not is_hole else "-",
+                        t['wid_ft']: b_val if (not is_rft and not is_hole) else "-",
+                        t['hei_ft']: h_val if (not is_sft and not is_rft and not is_hole) else "-",
+                        t['deduction']: ded_val if not is_hole else "-",
                         "Type": t['type_ded'] if is_ded_row else t['type_add'],
                         "Result": sub_total_display
                     })
@@ -922,9 +933,9 @@ def main():
                     st.session_state[rows_state_key].append({
                         "desc": f"{t['grid_default']} {len(st.session_state[rows_state_key]) + 1}",
                         "no": 1,
-                        "l": 50.0 if is_sft else 10.0,
-                        "b": 50.0 if is_sft else 10.0,
-                        "h": 5.0,
+                        "l": 50.0 if is_sft else (10.0 if not is_hole else 0.0),
+                        "b": 50.0 if is_sft else (10.0 if not is_hole else 0.0),
+                        "h": 5.0 if not is_hole else 0.0,
                         "ded": 0.0,
                         "is_deduction_row": False
                     })
