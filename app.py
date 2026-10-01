@@ -601,7 +601,7 @@ def main():
     # ----------------------------------------------------
     # ၁။ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေး သတ်မှတ်ရန် Block
     # ----------------------------------------------------
-    with st.expander(t['rates_title'], expanded=False):
+    with st.expander(t['rates_title'], expanded=True):
         st.subheader(t['rates_subheader'])
         col_r1, col_r2 = st.columns(2)
         
