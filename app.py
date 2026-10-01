@@ -67,7 +67,7 @@ def parse_excel_rates(file_path):
     return items
 
 
-def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
+def parse_and_auto_select_uploaded_excel(uploaded_file, ew_options):
     st.session_state['last_excel_error'] = None
 
     try:
@@ -151,65 +151,15 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
             st.session_state['last_excel_error'] = "⚠️ Excel ဖိုင်ထဲတွင် Measurement Data များ ရှာမတွေ့ပါ။"
             return
 
-        full_text_str = " ".join([str(x) for x in df_raw.values.flatten() if pd.notna(x)]).lower()
-
-        selected_ew, selected_cc, selected_ir, selected_rc, selected_rc_m, selected_bw = [], [], [], [], [], []
-
-        if 'ew' in all_item_maps:
-            for k, v in all_item_maps['ew'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    selected_ew.append(k)
-
-        if 'cc' in all_item_maps:
-            for k, v in all_item_maps['cc'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    if any(kw in full_text_str for kw in ['concrete', 'cement', 'c.c', '1:2:4', '1:3:6']):
-                        selected_cc.append(k)
-
-        if 'ir' in all_item_maps:
-            for k, v in all_item_maps['ir'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    if any(kw in full_text_str for kw in ['iron', 'steel', 'rebar', 'w.i', 'kg', 'ton', 'bar']):
-                        selected_ir.append(k)
-
-        if 'rc' in all_item_maps:
-            for k, v in all_item_maps['rc'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    if any(kw in full_text_str for kw in ['reinforced', 'r.c.c', 'rcc', 'pipe', 'post']):
-                        selected_rc.append(k)
-
-        if 'rc_m' in all_item_maps:
-            for k, v in all_item_maps['rc_m'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    if any(kw in full_text_str for kw in ['reinforced', 'r.c.c', 'rcc', 'machine', 'mixer']):
-                        selected_rc_m.append(k)
-
-        if 'bw' in all_item_maps:
-            for k, v in all_item_maps['bw'].items():
-                item_no_str = clean_str_item(v.get('item_no', ''))
-                if item_no_str in excel_item_nos:
-                    if any(kw in full_text_str for kw in ['brick', 'brickwork', 'brick work', 'masonry', 'အုတ်']):
-                        selected_bw.append(k)
+        selected_ew = []
+        for k, v in ew_options.items():
+            item_no_str = clean_str_item(v.get('item_no', ''))
+            if item_no_str in excel_item_nos:
+                selected_ew.append(k)
 
         st.session_state['selected_ew'] = selected_ew
-        st.session_state['selected_cc'] = selected_cc
-        st.session_state['selected_ir'] = selected_ir
-        st.session_state['selected_rc'] = selected_rc
-        st.session_state['selected_rc_m'] = selected_rc_m
-        st.session_state['selected_bw'] = selected_bw
 
-        all_selected_keys = selected_ew + selected_cc + selected_ir + selected_rc + selected_rc_m + selected_bw
-        all_items_flat = []
-        for cat in ['ew', 'cc', 'ir', 'rc', 'rc_m', 'bw']:
-            if cat in all_item_maps:
-                for k, item in all_item_maps[cat].items():
-                    if k in all_selected_keys:
-                        all_items_flat.append(item)
+        all_items_flat = [ew_options[k] for k in selected_ew if k in ew_options]
 
         imported_rows_count = 0
         for idx, item in enumerate(all_items_flat):
@@ -258,7 +208,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
                     st.session_state[rows_state_key] = new_rows
                     imported_rows_count += len(new_rows)
 
-        st.session_state['excel_import_success'] = f"✅ Excel မှ Item များနှင့် အတိုင်းအတာ စာရင်း ({imported_rows_count}) ခုကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။"
+        st.session_state['excel_import_success'] = f"✅ Excel မှ Earthwork Item များနှင့် အတိုင်းအတာ စာရင်း ({imported_rows_count}) ခုကို အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။"
 
     except Exception as e:
         err_msg = traceback.format_exc()
@@ -268,7 +218,7 @@ def parse_and_auto_select_uploaded_excel(uploaded_file, all_item_maps):
 def export_measurement_template():
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Measurement Input Template"
+    ws.title = "Earthwork Measurement Template"
 
     headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type"]
     header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
@@ -282,7 +232,7 @@ def export_measurement_template():
     sample_data = [
         ["1", "Excavation Grid A-1", 2, 10, 5, 4, 0, "Addition"],
         ["1", "Column Box Hole Deduction", 1, 2, 2, 4, 0, "Deduction"],
-        ["2", "Foundation Concrete Footing", 4, 6, 6, 1.5, 0, "Addition"],
+        ["2", "Backfilling Work", 1, 50, 20, 2, 0, "Addition"],
     ]
 
     for row_idx, row_vals in enumerate(sample_data, start=2):
@@ -303,9 +253,9 @@ def export_measurement_template():
 def export_measurement_sheet_excel(selected_items_list, st_session_state):
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Measurement Sheet"
+    ws.title = "Earthwork Measurement"
 
-    ws['A1'] = "DETAIL MEASUREMENT SHEET"
+    ws['A1'] = "EARTHWORK DETAIL MEASUREMENT SHEET"
     ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
     
     headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
@@ -361,8 +311,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
                     mult_expr = f"C{row_idx}*D{row_idx}"
                 elif is_sft:
                     mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}"
-                elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
-                    mult_expr = f"C{row_idx}*D{row_idx}"
                 else:
                     mult_expr = f"C{row_idx}*D{row_idx}*E{row_idx}*F{row_idx}"
 
@@ -397,7 +345,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
     
     ws_mat = wb.active
     ws_mat.title = "Material Summary"
-    ws_mat['A1'] = "MATERIAL COST BREAKDOWN (BOQ)"
+    ws_mat['A1'] = "EARTHWORK MATERIAL COST BREAKDOWN"
     ws_mat['A1'].font = Font(size=14, bold=True, color='1F497D')
 
     headers = ["No.", "Particular Description", "Unit", "Quantity", "Rate (MMK)", "Amount (MMK)"]
@@ -426,7 +374,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
     ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
 
     ws_lab = wb.create_sheet(title="Labour Summary")
-    ws_lab['A1'] = "LABOUR COST BREAKDOWN (BOQ)"
+    ws_lab['A1'] = "EARTHWORK LABOUR COST BREAKDOWN"
     ws_lab['A1'].font = Font(size=14, bold=True, color='1F497D')
 
     for col_idx, h in enumerate(headers, 1):
@@ -464,15 +412,14 @@ def export_boq_summary_excel(material_summary, labour_summary):
 
 def main():
     st.set_page_config(
-        page_title="Civil Site Estimator & QS Tool", layout="wide", page_icon="🏗️"
+        page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
     )
 
     # CSS Customizations
     st.markdown("""
         <style>
-            /* Top Banner Styling */
             .main-header {
-                background: linear-gradient(135deg, #0284c7, #2563eb);
+                background: linear-gradient(135deg, #15803d, #16a34a);
                 padding: 20px;
                 border-radius: 12px;
                 color: white;
@@ -485,50 +432,27 @@ def main():
                 margin-bottom: 5px !important;
             }
             .main-header p {
-                color: #e0f2fe !important;
+                color: #f0fdf4 !important;
                 font-size: 14px !important;
             }
-            
-            /* Card & Box Style */
-            .qs-card {
-                background-color: #ffffff;
-                border: 1px solid #e5e7eb;
-                border-radius: 10px;
-                padding: 16px;
-                margin-bottom: 15px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            }
-            
-            /* Metric Box Style */
             div[data-testid="stMetricValue"] {
                 font-size: 22px !important;
                 font-weight: bold !important;
-                color: #1e3a8a !important;
-            }
-            
-            /* Buttons Customization */
-            .stButton > button {
-                font-size: 15px !important;
-                font-weight: 600 !important;
-                border-radius: 8px !important;
-                padding: 8px 16px !important;
-                transition: all 0.2s ease-in-out;
+                color: #15803d !important;
             }
             .stDownloadButton > button {
                 font-size: 15px !important;
                 font-weight: bold !important;
                 border-radius: 8px !important;
-                background-color: #0284c7 !important;
+                background-color: #16a34a !important;
                 color: white !important;
                 width: 100%;
             }
-            
-            /* Subheaders */
             .section-title {
-                color: #1e293b;
+                color: #14532d;
                 font-weight: 700;
                 font-size: 18px;
-                border-left: 4px solid #0284c7;
+                border-left: 4px solid #16a34a;
                 padding-left: 10px;
                 margin-top: 15px;
                 margin-bottom: 15px;
@@ -536,68 +460,30 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Modern Header Banner
+    # Banner
     st.markdown("""
         <div class="main-header">
-            <h1>🏗️ Civil Calculation & QS Tool</h1>
-            <p>ဆိုဒ်တွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် Material/Labour BOQ စာရင်း လွယ်ကူစွာ တွက်ချက်ပါ</p>
+            <h1>🚜 Earthwork QS & Calculation Tool</h1>
+            <p>မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Load Rate Master Data
+    # Load Earthwork Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
-    concrete_path = os.path.join(BASE_DIR, "2 Concrete ( Hand mixed ).xls")
-    iron_path = os.path.join(BASE_DIR, "3 Iron and Steel work.xls")
-    rc_path = os.path.join(BASE_DIR, "4.1 Reinforced concrete ( Hand mixed ).xls")
-    rc_machine_path = os.path.join(BASE_DIR, "4.2 Reinforced concrete ( mixed by machine ).xls")
-    brickwork_path = os.path.join(BASE_DIR, "5 Brick work.xls")
-
     earthwork_items = parse_excel_rates(earthwork_path)
-    concrete_items = parse_excel_rates(concrete_path)
-    iron_items = parse_excel_rates(iron_path)
-    rc_items = parse_excel_rates(rc_path)
-    rc_machine_items = parse_excel_rates(rc_machine_path)
-    brickwork_items = parse_excel_rates(brickwork_path)
 
     ew_options = {f"[မြေကျင်း] Item {i['item_no']} - {i['title']}": i for i in earthwork_items}
-    cc_options = {f"[ကွန်ကရစ်] Item {i['item_no']} - {i['title']}": i for i in concrete_items}
-    ir_options = {f"[သံချည်သံကွေး] Item {i['item_no']} - {i['title']}": i for i in iron_items}
-    rc_options = {f"[သံကွန်ကရစ် (လက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_items}
-    rc_m_options = {f"[သံကွန်ကရစ် (စက်စပ်)] Item {i['item_no']} - {i['title']}": i for i in rc_machine_items}
-    bw_options = {f"[အုတ်စီအုတ်ကိုင်] Item {i['item_no']} - {i['title']}": i for i in brickwork_items}
-
-    all_item_maps = {
-        'ew': ew_options, 
-        'cc': cc_options, 
-        'ir': ir_options, 
-        'rc': rc_options,
-        'rc_m': rc_m_options,
-        'bw': bw_options
-    }
 
     if 'selected_ew' not in st.session_state:
         st.session_state['selected_ew'] = []
-    if 'selected_cc' not in st.session_state:
-        st.session_state['selected_cc'] = []
-    if 'selected_ir' not in st.session_state:
-        st.session_state['selected_ir'] = []
-    if 'selected_rc' not in st.session_state:
-        st.session_state['selected_rc'] = []
-    if 'selected_rc_m' not in st.session_state:
-        st.session_state['selected_rc_m'] = []
-    if 'selected_bw' not in st.session_state:
-        st.session_state['selected_bw'] = []
 
-    # Messages
     if st.session_state.get('last_excel_error'):
         st.error(st.session_state['last_excel_error'])
 
     if st.session_state.get('excel_import_success'):
         st.success(st.session_state['excel_import_success'])
 
-    # ==========================================
-    # Main Page Tools
-    # ==========================================
+    # Tools
     with st.expander("🛠️ အရန်ကိရိယာများနှင့် ပေါက်ဈေး ပြင်ဆင်ရန် (Tools & Rates)", expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             "⚙️ ပစ္စည်း/လုပ်အားခ ပေါက်ဈေး", 
@@ -607,43 +493,19 @@ def main():
         ])
 
         with tab_rates:
-            st.subheader("ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
-            
-            col_r1, col_r2, col_r3 = st.columns(3)
+            st.subheader("မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)")
+            col_r1, col_r2 = st.columns(2)
             
             with col_r1:
                 st.markdown("**👷 လုပ်အားခ ပေါက်ဈေးများ**")
                 rate_worker = st.number_input("အလုပ်သမား (ကျပ်)", value=25000.0, step=1000.0)
                 rate_digger = st.number_input("မြေကျင်းတူး (ကျပ်)", value=25000.0, step=1000.0)
-                rate_mason = st.number_input("ပန်းရံဆရာ (ကျပ်)", value=25000.0, step=1000.0)
-                rate_carpenter = st.number_input("လက်သမားဆရာ (ကျပ်)", value=35000.0, step=1000.0)
                 rate_maistry = st.number_input("ခေါင်းဆောင် / မေစတရီ (ကျပ်)", value=30000.0, step=1000.0)
-                rate_blacksmith = st.number_input("သံချည်သံကွေးဆရာ (ကျပ်)", value=28000.0, step=1000.0)
-                rate_welder = st.number_input("ဝိန်းဆရာ (ကျပ်)", value=30000.0, step=1000.0)
-                rate_surveyor = st.number_input("တိုင်းတာရေး / Surveyor (ကျပ်)", value=35000.0, step=1000.0)
 
             with col_r2:
-                st.markdown("**🧱 ကွန်ကရစ်၊ အုတ်နှင့် မြေလုပ်ငန်း ပစ္စည်းဈေး**")
-                rate_brick = st.number_input("အုတ် (၁ လုံး)", value=200.0, step=10.0)
-                rate_cement = st.number_input("ဘိလပ်မြေ (၁ အိတ်)", value=12000.0, step=500.0)
-                rate_sand = st.number_input("သဲ (ကျင်း)", value=45000.0, step=1000.0)
-                rate_shingle = st.number_input("မြစ်ကျောက် (ကျင်း)", value=85000.0, step=1000.0)
-                rate_gravel = st.number_input("ကျောက်စုန်း/ကျောက်စိစစ် (ကျင်း)", value=60000.0, step=1000.0)
-                rate_granite = st.number_input("ဂရက်နိုက် ကျောက်စိစစ် (ကျင်း)", value=95000.0, step=1000.0)
-                rate_impermo = st.number_input("Impermo ရေကာဆေး", value=3500.0)
-                rate_ironite = st.number_input("Ironite ဆေး", value=4000.0)
-                rate_timber_scantling = st.number_input("သစ် (Timber scantling)", value=35000.0)
-                rate_timber_planks = st.number_input("သစ်ပျဉ် (Timber planks)", value=1200.0)
-                rate_nails = st.number_input("သံမှို (Nails)", value=3360.0)
-
-            with col_r3:
-                st.markdown("**⚙️ သံနှင့် တည်ဆောက်ရေး ပစ္စည်းဈေး**")
-                rate_steel_bar = st.number_input("သံချောင်း/ဘား M.S Bar (၁ တန်)", value=2800000.0, step=10000.0)
-                rate_binding_wire = st.number_input("ဘိုင်းဒင်းဝါယာ/သံဇကာနန်း (ပိဿာ/ပေါင်)", value=6500.0)
-                rate_structural_steel = st.number_input("Structural Steel (၁ တန်)", value=3000000.0)
-                rate_rs_girder = st.number_input("R.S Girder (1 cwt)", value=150000.0)
-                rate_carriage = st.number_input("ဆိုဒ်အရောက် သယ်ယူခ (1 cwt)", value=5000.0)
-                rate_hoisting = st.number_input("အထက်သို့ တင်/ဆင်ခ (1 cwt)", value=15000.0)
+                st.markdown("**📦 အခြား ကုန်ကျစရိတ်များ**")
+                rate_sand = st.number_input("သဲဖို့ (ကျင်း)", value=45000.0, step=1000.0)
+                rate_carriage = st.number_input("မြေ/သဲ သယ်ယူခ (ကျင်း)", value=15000.0, step=1000.0)
 
         with tab_calc:
             st.subheader("🧮 အလွယ်တွက်စက်")
@@ -665,7 +527,7 @@ def main():
                 "လက်မ -> ပေ (Inches -> Feet)",
                 "စတုရန်းပေ <-> စတုရန်းမီတာ (Sft <-> Sq.m)",
                 "ကုဗပေ <-> ကုဗမီတာ (Cft <-> Cu.m)",
-                "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)"
+                "ကုဗပေ -> ကျင်း (Cft -> Cu.ft/100)"
             ])
 
             if conv_type == "လက်မ -> ပေ (Inches -> Feet)":
@@ -680,70 +542,32 @@ def main():
                 cft_val = st.number_input("ကုဗပေ (Cft):", min_value=0.0, value=100.0)
                 st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 35.315:.2f} Cu.m**")
 
-            elif conv_type == "သံအလေးချိန် (အတန်းအစား -> ကီလို/တန်)":
-                bar_dia = st.selectbox("သံဆိုဒ် အရွယ်အစား:", [
-                    "10 mm (3/8\")", "12 mm (1/2\")", "16 mm (5/8\")", "20 mm (3/4\")", "25 mm (1\")"
-                ])
-                length_ft = st.number_input("စုစုပေါင်း အရှည် (ပေ):", min_value=0.0, value=100.0)
-
-                dia_mm_map = {
-                    "10 mm (3/8\")": 10,
-                    "12 mm (1/2\")": 12,
-                    "16 mm (5/8\")": 16,
-                    "20 mm (3/4\")": 20,
-                    "25 mm (1\")": 25
-                }
-                d_mm = dia_mm_map[bar_dia]
-                wt_kg_per_ft = (d_mm * d_mm) / 533.0
-                total_kg = length_ft * wt_kg_per_ft
-                total_ton = total_kg / 1000.0
-
-                st.info(f"👉 **အလေးချိန် = {total_kg:,.2f} ကီလိုဂရမ် ({total_ton:.4f} တန်)**")
+            elif conv_type == "ကုဗပေ -> ကျင်း (Cft -> Cu.ft/100)":
+                cft_val = st.number_input("ကုဗပေ ပမာဏ (Cft):", min_value=0.0, value=500.0)
+                st.info(f"👉 **{cft_val:,.2f} Cft = {cft_val / 100.0:.2f} ကျင်း (Sud/ %Cft)**")
 
         with tab_upload:
-            st.subheader("📥 တိုင်းတာပြီး Excel ဖိုင်တင်ရန်")
+            st.subheader("📥 တိုင်းတာပြီး Earthwork Excel ဖိုင်တင်ရန်")
             template_buffer = export_measurement_template()
             st.download_button(
-                label="📄 နမူနာ ပုံစံ (Template) ရယူရန်",
+                label="📄 Earthwork နမူနာ ပုံစံ (Template) ရယူရန်",
                 data=template_buffer,
-                file_name="Measurement_Input_Template.xlsx",
+                file_name="Earthwork_Measurement_Template.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             st.divider()
             uploaded_meas_file = st.file_uploader("Excel / CSV ဖိုင် ရွေးပါ:", type=["xlsx", "xls", "csv"])
             if uploaded_meas_file is not None:
                 if st.button("🚀 ဖိုင်ထဲမှ စာရင်းများ ဖတ်ယူမည်", type="primary", use_container_width=True):
-                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, all_item_maps)
+                    parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
                     st.rerun()
 
-    # Fallback Values for Rates
+    # Rate Fallbacks
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
-    rate_mason = locals().get('rate_mason', 25000.0)
-    rate_carpenter = locals().get('rate_carpenter', 35000.0)
     rate_maistry = locals().get('rate_maistry', 30000.0)
-    rate_blacksmith = locals().get('rate_blacksmith', 28000.0)
-    rate_welder = locals().get('rate_welder', 30000.0)
-    rate_surveyor = locals().get('rate_surveyor', 35000.0)
-
-    rate_brick = locals().get('rate_brick', 200.0)
-    rate_cement = locals().get('rate_cement', 12000.0)
     rate_sand = locals().get('rate_sand', 45000.0)
-    rate_shingle = locals().get('rate_shingle', 85000.0)
-    rate_gravel = locals().get('rate_gravel', 60000.0)
-    rate_granite = locals().get('rate_granite', 95000.0)
-    rate_impermo = locals().get('rate_impermo', 3500.0)
-    rate_ironite = locals().get('rate_ironite', 4000.0)
-    rate_timber_scantling = locals().get('rate_timber_scantling', 35000.0)
-    rate_timber_planks = locals().get('rate_timber_planks', 1200.0)
-    rate_nails = locals().get('rate_nails', 3360.0)
-
-    rate_steel_bar = locals().get('rate_steel_bar', 2800000.0)
-    rate_binding_wire = locals().get('rate_binding_wire', 6500.0)
-    rate_structural_steel = locals().get('rate_structural_steel', 3000000.0)
-    rate_rs_girder = locals().get('rate_rs_girder', 150000.0)
-    rate_carriage = locals().get('rate_carriage', 5000.0)
-    rate_hoisting = locals().get('rate_hoisting', 15000.0)
+    rate_carriage = locals().get('rate_carriage', 15000.0)
 
     rate_map = {
         "Worker": rate_worker,
@@ -751,112 +575,28 @@ def main():
         "Worker for watering": rate_worker,
         "Worker for carrying": rate_worker,
         "Digger": rate_digger,
-        "Mason": rate_mason,
-        "Carpenter": rate_carpenter,
         "Maistry": rate_maistry,
-        "Blacksmith": rate_blacksmith,
-        "Steel worker": rate_blacksmith,
-        "Welder": rate_welder,
-        "Surveyor": rate_surveyor,
-        "Bricks": rate_brick,
-        "Brick": rate_brick,
-        "1st class bricks": rate_brick,
-        "First class bricks": rate_brick,
-        "Best burnt bricks": rate_brick,
-        "Cement": rate_cement,
         "Sand": rate_sand,
-        "River Shingle (1-1/2\" gauge)": rate_shingle,
-        "River Shingle (1/4\" to 3/4\" gauge)": rate_shingle,
-        "River Shingle (3/4\" gauge)": rate_shingle,
-        "River Shingle (3/4\" to 1-1/2\" gauge)": rate_shingle,
-        "Gravel": rate_gravel,
-        "1/4\" Granite chipping": rate_granite,
-        "Impermo": rate_impermo,
-        "Ironite": rate_ironite,
-        "Timber scantling": rate_timber_scantling,
-        "Tinber planks 1\"": rate_timber_planks,
-        "Nails and spikes": rate_nails,
-        "Wire Nails": rate_nails,
-        "M.S. Bar": rate_steel_bar,
-        "Reinforcement Steel": rate_steel_bar,
-        "10mm Ø M-S rods": rate_steel_bar,
-        "Binding Wire": rate_binding_wire,
-        "Binding wire": rate_binding_wire,
-        "No.6 G.I plain wire": rate_binding_wire,
-        "Coal tar for filling in letters": 3000.0,
-        "Shuttering lump sum allowing same form to be use several times": 0.0,
-        "Triangular meah RIF style no.245": 1500.0,
-        "Triangular meah rif style no.245": 1500.0,
-        "Special shuttering for pipe": 0.0,
-        "B.R.C no.10 fabric fixed": 2500.0,
-        "Shuttering formwork (rate reduce to 1/6 for reason of repeated use)": 500.0,
-        "Curing Work for 14 days": 0.0,
-        "Structural Steel": rate_structural_steel,
-        "R.S. girder": rate_rs_girder,
         "Carriage to site": rate_carriage,
-        "Hoisting and fixing": rate_hoisting,
     }
 
-    # ==========================================
-    # အဆင့် (၁) - လုပ်ငန်းအမျိုးအစား ရွေးချယ်ခြင်း
-    # ==========================================
-    st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစားများ ရွေးပါ</div>', unsafe_allow_html=True)
+    # Step 1: Selection
+    st.markdown('<div class="section-title">၁။ တွက်ချက်လိုသော Earthwork Item များ ရွေးပါ</div>', unsafe_allow_html=True)
     
-    col_e, col_c, col_i, col_rc, col_rc_m, col_bw = st.columns(6)
-    with col_e:
-        show_earthwork = st.checkbox("🚜 မြေကျင်းလုပ်ငန်း", value=False)
-    with col_c:
-        show_concrete = st.checkbox("🧱 ကွန်ကရစ်လုပ်ငန်း", value=False)
-    with col_i:
-        show_iron = st.checkbox("⚙️ သံချည်သံကွေး", value=False)
-    with col_rc:
-        show_rc = st.checkbox("🏗️ သံကွန်ကရစ် (လက်စပ်)", value=False)
-    with col_rc_m:
-        show_rc_m = st.checkbox("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်)", value=False)
-    with col_bw:
-        show_brickwork = st.checkbox("🧱 အုတ်စီအုတ်ကိုင်", value=False)
+    if not earthwork_items:
+        st.warning("⚠️ '1 Earth Work.xls' ဖိုင်ကို ရှာမတွေ့ပါ သို့မဟုတ် ဖိုင်ထဲတွင် ဒေတာ မရှိပါ။")
+        return
 
-    selected_items_list = []
-
-    if show_earthwork and earthwork_items:
-        ew_selected = st.multiselect("🚜 မြေကျင်းလုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(ew_options.keys()), key="selected_ew")
-        for key in ew_selected:
-            selected_items_list.append(ew_options[key])
-
-    if show_concrete and concrete_items:
-        cc_selected = st.multiselect("🧱 ကွန်ကရစ်လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(cc_options.keys()), key="selected_cc")
-        for key in cc_selected:
-            selected_items_list.append(cc_options[key])
-
-    if show_iron and iron_items:
-        ir_selected = st.multiselect("⚙️ သံချည်သံကွေးလုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(ir_options.keys()), key="selected_ir")
-        for key in ir_selected:
-            selected_items_list.append(ir_options[key])
-
-    if show_rc and rc_items:
-        rc_selected = st.multiselect("🏗️ သံကွန်ကရစ် (လက်စပ်) လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_options.keys()), key="selected_rc")
-        for key in rc_selected:
-            selected_items_list.append(rc_options[key])
-
-    if show_rc_m and rc_machine_items:
-        rc_m_selected = st.multiselect("⚙️🏗️ သံကွန်ကရစ် (စက်စပ်) လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(rc_m_options.keys()), key="selected_rc_m")
-        for key in rc_m_selected:
-            selected_items_list.append(rc_m_options[key])
-
-    if show_brickwork and brickwork_items:
-        bw_selected = st.multiselect("🧱 အုတ်စီအုတ်ကိုင်လုပ်ငန်းမှ တွက်မည်များကို ရွေးပါ:", list(bw_options.keys()), key="selected_bw")
-        for key in bw_selected:
-            selected_items_list.append(bw_options[key])
+    ew_selected = st.multiselect("🚜 မြေကျင်းလုပ်ငန်းမှ တွက်လိုသည့် Item များကို ရွေးပါ:", list(ew_options.keys()), key="selected_ew")
+    selected_items_list = [ew_options[k] for k in ew_selected]
 
     if not selected_items_list:
-        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော အကြောင်းအရာများကို အထက်တွင် ရွေးပေးပါ။ သို့မဟုတ် အထက်ပါ Excel Upload အကွက်မှ ဖိုင် တင်သွင်းပါ။")
+        st.info("💡 **အကြံပြုချက်**: တွက်ချက်လိုသော Earthwork Item များကို အထက်ပါ Multiselect Box တွင် ရွေးပေးပါ။")
         return
 
     st.divider()
 
-    # ==========================================
-    # အဆင့် (၂) - အတိုင်းအတာများ ရိုက်ထည့်ခြင်း
-    # ==========================================
+    # Step 2: Detail Measurement
     st.markdown('<div class="section-title">📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)</div>', unsafe_allow_html=True)
 
     item_quantities = {}
@@ -957,8 +697,6 @@ def main():
                         gross_qty = no_val * l_val
                     elif is_sft:
                         gross_qty = no_val * l_val * b_val
-                    elif 'ton' in unit_str or 'cwt' in unit_str or 'lb' in unit_str or 'kg' in unit_str:
-                        gross_qty = no_val * l_val
                     else:
                         gross_qty = no_val * l_val * b_val * h_val
 
@@ -1014,22 +752,20 @@ def main():
             
             st.info(f"💡 **Item {item_no_str} စုစုပေါင်း = `{item_total_qty:,.2f} {item['unit']}`**")
 
-    # Excel Download Button
+    # Excel Download
     meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
     st.download_button(
-        label="📥 Detail Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
+        label="📥 Detail Earthwork Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
         data=meas_excel_buffer,
-        file_name="Detail_Measurement_Sheet.xlsx",
+        file_name="Earthwork_Measurement_Sheet.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
 
     st.divider()
 
-    # ==========================================
-    # အဆင့် (၃) - စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်ခြင်း
-    # ==========================================
-    st.markdown('<div class="section-title">📊 ၃။ စုစုပေါင်း ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)</div>', unsafe_allow_html=True)
+    # Step 3: Cost Analysis
+    st.markdown('<div class="section-title">📊 ၃။ Earthwork ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)</div>', unsafe_allow_html=True)
 
     grand_total = 0.0
     material_summary = {}
@@ -1088,10 +824,9 @@ def main():
 
             for row in item['breakdown']:
                 part = row['particular']
-                std_qty = row['qty']        # <--- std_qty ကို ဤနေရာတွင် ဦးစွာ သတ်မှတ်ပါ
+                std_qty = row['qty']
                 u = row['unit']
 
-                # std_base_qty 0 ဖြစ်နေပါက 0 နှင့် စားမိသည့် ZeroDivisionError မတက်စေရန် စစ်ဆေးခြင်း
                 if std_base_qty <= 0:
                     req_qty = std_qty * measured_qty
                 else:
@@ -1166,12 +901,9 @@ def main():
 
     st.divider()
 
-    # ==========================================
-    # အဆင့် (၄) - BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်
-    # ==========================================
-    st.markdown('<div class="section-title">📜 ၄။ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ် (BOQ Summary)</div>', unsafe_allow_html=True)
+    # Step 4: BOQ Summary
+    st.markdown('<div class="section-title">📜 ၄။ Earthwork BOQ စာရင်းချုပ်</div>', unsafe_allow_html=True)
 
-    # Material Section
     st.markdown("### 📦 ၁။ ပစ္စည်းကုန်ကျစရိတ် စာရင်း (Material Summary)")
     mat_rows = []
     total_mat_cost = 0.0
@@ -1193,7 +925,6 @@ def main():
 
     st.divider()
 
-    # Labour Section
     st.markdown("### 👷 ၂။ လုပ်အားခ စာရင်း (Labour Summary)")
     lab_rows = []
     total_lab_cost = 0.0
@@ -1213,23 +944,22 @@ def main():
     else:
         st.info("လုပ်အားခ စရိတ် မရှိပါ။")
 
-    # BOQ Download Button
     boq_excel_buffer = export_boq_summary_excel(material_summary, labour_summary)
     st.download_button(
-        label="📥 BOQ ပစ္စည်းနှင့် လုပ်အားခ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
+        label="📥 Earthwork BOQ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
         data=boq_excel_buffer,
-        file_name="BOQ_Summary.xlsx",
+        file_name="Earthwork_BOQ_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
 
     st.divider()
 
-    # Metric Dashboard Summary
+    # Dashboard Metrics
     col_m1, col_m2, col_m3 = st.columns(3)
     col_m1.metric("📦 စုစုပေါင်း ပစ္စည်းဖိုး", f"{total_mat_cost:,.2f} ကျပ်")
     col_m2.metric("👷 စုစုပေါင်း လုပ်အားခ", f"{total_lab_cost:,.2f} ကျပ်")
-    col_m3.metric("💰 ပရောဂျက် စုစုပေါင်းစရိတ်", f"{grand_total:,.2f} ကျပ်")
+    col_m3.metric("💰 မြေကျင်းလုပ်ငန်း စုစုပေါင်းစရိတ်", f"{grand_total:,.2f} ကျပ်")
 
 
 if __name__ == "__main__":
