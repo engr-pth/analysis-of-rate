@@ -10,11 +10,11 @@ from openpyxl.utils import get_column_letter
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Labour/Worker Keywords List
+# Labour/Worker Keywords List (Water Charges ကို Material ဘက်ရောက်စေရန် "charges" ကို ဖြုတ်ထားပါသည်)
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
-    "smith", "machine driver", "charges", "labour",
+    "smith", "machine driver", "labour",
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
@@ -103,7 +103,7 @@ TRANSLATIONS = {
         "title": "🚜 Earthwork QS & Calculation Tool",
         "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork excavation and backfilling.",
         "tools_title": "🛠️ Tools & Unit Rates Configuration",
-        "tab_rates": "⚙️ Material/Labour Rates",
+        "tab_rates": "⚙️️ Material/Labour Rates",
         "tab_calc": "🧮 Calculator",
         "tab_conv": "🔄 Unit Converter",
         "tab_upload": "📥 Import Excel",
@@ -441,7 +441,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
-        # Item 13-17/hole unit ဖြစ်ပါက Header တွင် 'Holes Count' သုံးပြီး ကျန်ရင် 'No.' သုံးမည်
         count_header = "Holes Count" if is_hole else "No."
         headers = ["Item No.", "Particular Description", count_header, "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
 
@@ -587,7 +586,6 @@ def main():
         page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
     )
 
-    # Top Language Selector (Main UI Area - No Sidebar)
     col_title_space, col_lang = st.columns([4, 1])
     with col_lang:
         lang_choice = st.radio(
@@ -600,7 +598,6 @@ def main():
     lang = "MM" if lang_choice == "မြန်မာ" else "EN"
     t = TRANSLATIONS[lang]
 
-    # CSS Customizations
     st.markdown("""
         <style>
             .main-header {
@@ -645,7 +642,6 @@ def main():
         </style>
     """, unsafe_allow_html=True)
 
-    # Banner
     st.markdown(f"""
         <div class="main-header">
             <h1>{t['title']}</h1>
@@ -653,7 +649,6 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Load Earthwork Data
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
     earthwork_items = parse_excel_rates(earthwork_path)
 
@@ -669,7 +664,6 @@ def main():
     if st.session_state.get('excel_import_success'):
         st.success(st.session_state['excel_import_success'])
 
-    # Tools
     with st.expander(t['tools_title'], expanded=True):
         tab_rates, tab_calc, tab_conv, tab_upload = st.tabs([
             t['tab_rates'], 
@@ -753,7 +747,6 @@ def main():
                     parse_and_auto_select_uploaded_excel(uploaded_meas_file, ew_options)
                     st.rerun()
 
-    # Rate Fallbacks & Mapping
     rate_worker = locals().get('rate_worker', 25000.0)
     rate_digger = locals().get('rate_digger', 25000.0)
     rate_maistry = locals().get('rate_maistry', 30000.0)
@@ -814,7 +807,6 @@ def main():
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
-        # Dynamic label based on unit
         label_no = t['hole_count'] if is_hole else t['qty_count']
 
         if rows_state_key not in st.session_state:
@@ -965,7 +957,6 @@ def main():
             
             st.info(f"💡 **Item {item_no_str} Total = `{item_total_qty:,.2f} {item['unit']}`**")
 
-    # Excel Download
     meas_excel_buffer = export_measurement_sheet_excel(selected_items_list, st.session_state)
     st.download_button(
         label=t['dl_meas_excel'],
@@ -1035,7 +1026,6 @@ def main():
             mat_breakdown = []
             lab_breakdown = []
 
-            # Calculate Extra Depth & Extra Lead Workers for Item 2, 3, 4
             extra_worker_depth = 0.0
             extra_worker_lead = 0.0
 
@@ -1055,13 +1045,11 @@ def main():
 
                     row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
 
-                    # 1. Depth extra: 5 ft ထက် ပိုပါက ပိုသည့် ၅ ပေတိုင်းအတွက် 100 cft လျှင် 0.5 ယောက်
                     if h_val > 5.0:
                         extra_h = h_val - 5.0
                         depth_steps = math.ceil(extra_h / 5.0)
                         extra_worker_depth += depth_steps * 0.5 * (row_cft / 100.0)
 
-                    # 2. Lead extra: L သို့မဟုတ် B ၁၀၀ ပေ ထက် ပိုပါက ပိုသည့် ပေ ၁၀၀ တိုင်းအတွက် 100 cft လျှင် 0.5 ယောက်
                     max_dist = max(l_val, b_val)
                     if max_dist > 100.0:
                         extra_dist = max_dist - 100.0
@@ -1078,12 +1066,10 @@ def main():
                 else:
                     req_qty = (std_qty / std_base_qty) * measured_qty
 
-                # Add Extra Workers to 'Worker' or 'Digger'
                 part_lower = part.lower()
                 if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
                     req_qty += (extra_worker_depth + extra_worker_lead)
 
-                # Handle Water Charges as Lumpsum (L-s) logic
                 u_str = str(u).lower().strip()
                 if 'l-s' in u_str or 'ls' in u_str or 'lump' in u_str:
                     req_qty = 1.0
@@ -1210,7 +1196,6 @@ def main():
 
     st.divider()
 
-    # Dashboard Metrics
     col_m1, col_m2, col_m3 = st.columns(3)
     col_m1.metric(t['total_mat_val'], f"{total_mat_cost:,.2f} MMK")
     col_m2.metric(t['total_lab_val'], f"{total_lab_cost:,.2f} MMK")
