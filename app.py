@@ -60,7 +60,8 @@ TRANSLATIONS = {
         "work_location": "လုပ်ငန်းနေရာ / အမျိုးအစား",
         "location_grid": "နေရာ / အကွက်အမည်",
         "grid_default": "အကွက်",
-        "qty_count": "တွင်းအရေအတွက် (Holes Count)",
+        "qty_count": "No.",
+        "hole_count": "တွင်းအရေအတွက် (Holes Count)",
         "lumpsum_rate": "တစ်စုတစ်ဝေးတည်း ဈေးနှုန်း (ကျပ်)",
         "len_ft": "အရှည် L (ပေ)",
         "wid_ft": "အနံ B (ပေ)",
@@ -138,7 +139,8 @@ TRANSLATIONS = {
         "work_location": "Work Location / Type",
         "location_grid": "Location / Grid Name",
         "grid_default": "Grid",
-        "qty_count": "Holes Count",
+        "qty_count": "No.",
+        "hole_count": "Holes Count",
         "lumpsum_rate": "Lumpsum Rate (MMK)",
         "len_ft": "Length L (ft)",
         "wid_ft": "Breadth B (ft)",
@@ -422,7 +424,6 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
     ws['A1'] = "EARTHWORK DETAIL MEASUREMENT SHEET"
     ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
     
-    headers = ["Item No.", "Particular Description", "No.", "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
     header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
     thin_border = Border(left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
@@ -439,6 +440,10 @@ def export_measurement_sheet_excel(selected_items_list, st_session_state):
         is_hole = 'hole' in unit_str
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
+
+        # Item 13-17/hole unit ဖြစ်ပါက Header တွင် 'Holes Count' သုံးပြီး ကျန်ရင် 'No.' သုံးမည်
+        count_header = "Holes Count" if is_hole else "No."
+        headers = ["Item No.", "Particular Description", count_header, "L (ft)", "B (ft)", "H (ft)", "Deduction", "Type", "Sub-total"]
 
         ws.cell(row=row_idx, column=1, value=f"Item {item_no_str} - {item['title']} ({item['unit']})").font = Font(bold=True, size=11)
         ws.merge_cells(start_row=row_idx, start_column=1, end_row=row_idx, end_column=9)
@@ -809,6 +814,9 @@ def main():
         is_sft = 'sft' in unit_str or 'sq.ft' in unit_str or 'sqft' in unit_str
         is_rft = 'rft' in unit_str or 'lin.ft' in unit_str
 
+        # Dynamic label based on unit
+        label_no = t['hole_count'] if is_hole else t['qty_count']
+
         if rows_state_key not in st.session_state:
             st.session_state[rows_state_key] = [
                 {
@@ -829,7 +837,7 @@ def main():
             if is_lumpsum:
                 c_desc, c_no, c_rate = st.columns([3, 1, 2])
                 p_desc = c_desc.text_input(t['work_location'], value="Lumpsum Job", key=f"desc_{idx}_{item_no_str}")
-                no_val = c_no.number_input(t['qty_count'], min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
+                no_val = c_no.number_input(label_no, min_value=1, value=1, key=f"no_{idx}_{item_no_str}")
                 ls_rate = c_rate.number_input(t['lumpsum_rate'], min_value=0.0, value=50000.0, step=10000.0, key=f"ls_rate_{idx}_{item_no_str}")
                 
                 item_total_qty = float(no_val)
@@ -837,7 +845,7 @@ def main():
 
                 meas_rows.append({
                     t['work_location']: p_desc,
-                    t['qty_count']: no_val,
+                    label_no: no_val,
                     t['len_ft']: "-",
                     t['wid_ft']: "-",
                     t['hei_ft']: "-",
@@ -868,7 +876,7 @@ def main():
                         value=r_data["desc"],
                         key=f"desc_{idx}_{r_idx}_{item_no_str}"
                     )
-                    no_val = c_no.number_input(t['qty_count'], min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
+                    no_val = c_no.number_input(label_no, min_value=1, value=int(r_data["no"]), key=f"no_{idx}_{r_idx}_{item_no_str}")
                     
                     l_val = 0.0
                     b_val = 0.0
@@ -916,7 +924,7 @@ def main():
 
                     meas_rows.append({
                         t['location_grid']: p_desc,
-                        t['qty_count']: no_val,
+                        label_no: no_val,
                         t['len_ft']: l_val if not is_hole else "-",
                         t['wid_ft']: b_val if (not is_rft and not is_hole) else "-",
                         t['hei_ft']: h_val if (not is_sft and not is_rft and not is_hole) else "-",
