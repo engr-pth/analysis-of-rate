@@ -14,12 +14,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LABOUR_KEYWORDS = [
     "worker", "digger", "mason", "carpenter", "maistry", 
     "blacksmith", "steel worker", "welder", "surveyor", 
-    "smith", "machine driver", "labour",
+    "smith", "machine driver", "labour", "mixing",
     "hoisting and fixing", "carriage to site", "site clearing", "dressing"
 ]
 
-# Item ခေါင်းစဉ်များအတွက် ဘာသာပြန် Dictionary (Item 22 ဖြုတ်ထားပါသည်)
+# Item ခေါင်းစဉ်များအတွက် ဘာသာပြန် Dictionary
 MM_ITEM_TITLES = {
+    # Earthwork Items
     "1(A)": "မြေပြင်ရှင်းလင်းခြင်း၊ သစ်ပင်ခုတ်ခြင်းနှင့် သစ်ငုတ်တူးခြင်း",
     "1(B)": "မြေပြင်ရှင်းလင်းခြင်း (သစ်ပင်ခုတ် မပါ၊ သစ်ငုတ်တူး မပါ)",
     "2": "အနက် ၅ ပေထက် မပိုသော မြေကျင်းတူးဖော်ခြင်း (သာမန်မြေ)",
@@ -42,6 +43,23 @@ MM_ITEM_TITLES = {
     "20": "၁၀ ပေ အနက် မိလ္လာကျင်းတူးခြင်း  (မြေမာ/ကျောက်စရစ်ပါသော မြေ)",
     "21": "၁၀ ပေ အနက် မိလ္လာကျင်းတူးခြင်း  (သဲမြေ၊ ရွှံ့မြေ)",
     "23": "ဖောင်ဒေးရှင်းချရန် ငုတ်ရိုက်ခြင်း",
+    
+    # Mortar Items
+    "M1": "ဘိလပ်မြေဖျော်စပ်နည်း ၁:၂ (Cement Mortar 1:2)",
+    "M2": "ဘိလပ်မြေဖျော်စပ်နည်း ၁:၃ (Cement Mortar 1:3)",
+    "M3": "ဘိလပ်မြေဖျော်စပ်နည်း ၁:၄ (Cement Mortar 1:4)",
+    "M4": "အင်္ဂတေကိုင်ရန် စက္ကူကတ္တရာ/သဲ/ဘိလပ်မြေ/ထုံး ရောစပ်နည်း ၁:၁:၆",
+    "M5": "ရေလုံ ဘိလပ်မြေဖျော်စပ်နည်း ၁:၂ (Pudlo 5% ပါဝင်)",
+    "M6": "ဘိလပ်မြေဖျော်စပ်နည်း ၁:၆ (Cement Mortar 1:6)",
+    "M7": "ထုံးအင်္ဂတေ ၁:၂ (Lime Mortar 1:2)",
+    "M8": "ထုံးအင်္ဂတေ ၁:၁:၁ (Lime Mortar 1:1:1)",
+    "M9": "လုပ်ငန်းငယ်များအတွက် ထုံးအင်္ဂတေ ၁:၁:၁",
+    "M10": "အင်္ဂတေကိုင်ရန် ထုံးအင်္ဂတေ ၂:၃:၁",
+    "M11": "လုပ်ငန်းငယ်များအတွက် ထုံးအင်္ဂတေ ၂:၃:၁",
+    "M12": "အင်္ဂတေကိုင်ရန် ရောစပ်အင်္ဂတေ ၁:၂:၆",
+    "M13": "ရွှံ့အင်္ဂတေ ၁:၁ (Mud Mortar 1:1)",
+    "M14": "ထုံးအင်္ဂတေ ၁:၁ (Lime Mortar 1:1)",
+    "M15": "ရောစပ်အင်္ဂတေ ၁:၁/၂:၄ (Composite Mortar)"
 }
 
 # Material / Labour Description ဘာသာပြန် Dictionary
@@ -59,7 +77,23 @@ PARTICULAR_TRANSLATIONS = {
         "Wire Nails": "သံရိုက် / သံမှို",
         "Water Charges": "ရေဖိုးရေခ",
         "Sand": "သဲ",
-        "Carriage to site": "လုပ်ငန်းခွင်သို့ သယ်ယူခ"
+        "Carriage to site": "လုပ်ငန်းခွင်သို့ သယ်ယူခ",
+        # Mortar Particulars
+        "Cement": "ဘိလပ်မြေ",
+        "Cement 46 cft.": "ဘိလပ်မြေ (46 cft စာ)",
+        "Cement 33 cft.": "ဘိလပ်မြေ (33 cft စာ)",
+        "Cement 25 cft.": "ဘိလပ်မြေ (25 cft စာ)",
+        "Cement 48 cft.": "ဘိလပ်မြေ (48 cft စာ)",
+        "Cement 16 2/3 cft.": "ဘိလပ်မြေ (16 2/3 cft စာ)",
+        "Cement 16 cft.": "ဘိလပ်မြေ (16 cft စာ)",
+        "Lime": "ထုံး",
+        "Lime ( Slaked )": "ထုံး (သေပြီး)",
+        "Pudlo": "Pudlo (ရေလုံဆေး)",
+        "Surkhi": "အုတ်နီမှုန့် (Surkhi)",
+        "Selection suitable clay ( mud )": "သင့်တော်သော ရွှံ့စေ့မြေ",
+        "Workers for mixing": "အင်္ဂတေဖျော် အလုပ်သမား",
+        "Worker for mixing including watering": "ရေလောင်း အင်္ဂတေဖျော် အလုပ်သမား",
+        "Workers": "အလုပ်သမား"
     },
     "EN": {
         "Worker": "Worker",
@@ -74,7 +108,16 @@ PARTICULAR_TRANSLATIONS = {
         "Wire Nails": "Wire Nails",
         "Water Charges": "Water Charges",
         "Sand": "Sand",
-        "Carriage to site": "Carriage to site"
+        "Carriage to site": "Carriage to site",
+        "Cement": "Cement",
+        "Lime": "Lime",
+        "Lime ( Slaked )": "Slaked Lime",
+        "Pudlo": "Pudlo Water Proofing Compound",
+        "Surkhi": "Surkhi Powder",
+        "Selection suitable clay ( mud )": "Suitable Clay / Mud",
+        "Workers for mixing": "Workers for mixing",
+        "Worker for mixing including watering": "Workers for mixing and watering",
+        "Workers": "Workers"
     }
 }
 
@@ -82,6 +125,7 @@ PARTICULAR_TRANSLATIONS = {
 UNIT_TRANSLATIONS = {
     "MM": {
         "100 Cft": "၁၀၀ ကုဗပေ",
+        "cft.": "ကုဗပေ",
         "Cft": "ကုဗပေ",
         "Sft": "စတုရန်းပေ",
         "Rft": "ပေအရှည်",
@@ -91,10 +135,13 @@ UNIT_TRANSLATIONS = {
         "LS": "တစ်စုတစ်ဝေး",
         "Job": "လုပ်ငန်း",
         "Hole": "တွင်း",
-        "Sud": "ကျင်း"
+        "Sud": "ကျင်း",
+        "lbs.": "ပေါင် (lbs)",
+        "no.": "ယောက်"
     },
     "EN": {
         "100 Cft": "100 Cft",
+        "cft.": "Cft",
         "Cft": "Cft",
         "Sft": "Sft",
         "Rft": "Rft",
@@ -104,23 +151,28 @@ UNIT_TRANSLATIONS = {
         "LS": "L-S",
         "Job": "Job",
         "Hole": "Hole",
-        "Sud": "Sud (%Cft)"
+        "Sud": "Sud (%Cft)",
+        "lbs.": "lbs",
+        "no.": "no."
     }
 }
 
 # Multi-language dictionary
 TRANSLATIONS = {
     "MM": {
-        "title": "🚜 Earthwork QS & Calculation Tool",
-        "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများအတွက် အတိုင်းအတာများ ရိုက်ထည့်၍ ကုန်ကျစရိတ်နှင့် လုပ်အားခ/ပစ္စည်း BOQ စာရင်း တွက်ချက်ပါ",
-        "rates_title": "⚙️ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေးများ သတ်မှတ်ရန်",
+        "title": "🚜 Construction Earthwork & Mortar QS Tool",
+        "subtitle": "မြေကျင်းတူး/မြေဖို့ လုပ်ငန်းများ နှင့် Mortar ဖျော်စပ်ခြင်းများအတွက် BOQ နှင့် ကုန်ကျစရိတ် တွက်ချက်ပါ",
+        "select_work_type": "⚙️ တွက်ချက်လိုသော လုပ်ငန်းအမျိုးအစား ရွေးချယ်ရန်:",
+        "chk_earthwork": "Earthwork (မြေကျင်းလုပ်ငန်း)",
+        "chk_mortar": "Mortar (အင်္ဂတေလုပ်ငန်း)",
+        "rates_title": "⚙️️ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေးများ သတ်မှတ်ရန်",
         "utility_tools_title": "🧮 တွက်ချက်ရေး အကူကိရိယာများ (Quick Tools)",
         "tab_calc": "🧮 ဂဏန်းတွက်စက်",
         "tab_conv": "🔄 ယူနစ်ပြောင်းရန်",
-        "rates_subheader": "မြေကျင်းလုပ်ငန်း ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
+        "rates_subheader": "ပေါက်ဈေး သတ်မှတ်ရန် (ကျပ်)",
         "labour_rates": "**👷 လုပ်အားခ ပေါက်ဈေးများ**",
         "material_rates": "**📦 ပစ္စည်းနှင့် အခြား ကုန်ကျစရိတ်များ**",
-        "rate_worker": "အလုပ်သမား (ကျပ်)",
+        "rate_worker": "အလုပ်သမား / ဖျော်သမား (ကျပ်)",
         "rate_digger": "မြေကျင်းတူး (ကျပ်)",
         "rate_maistry": "ခေါင်းဆောင် / မေစတရီ (ကျပ်)",
         "rate_surveyor": "တိုင်းတာရေးမှူး / Surveyor (ကျပ်)",
@@ -128,8 +180,13 @@ TRANSLATIONS = {
         "rate_timber": "သစ် / Timber (၁ တန် ကျပ်)",
         "rate_nails": "သံရိုက် / Wire Nails (၁ ပိဿာ ကျပ်)",
         "rate_water": "ရေဖိုးရေခ / Water Charges (L-s ကျပ်)",
-        "rate_sand": "သဲဖို့ (ကျင်း)",
+        "rate_sand": "သဲ (ကျင်း/Cft)",
         "rate_carriage": "မြေ/သဲ သယ်ယူခ (ကျင်း)",
+        "rate_cement": "ဘိလပ်မြေ (၁ အိတ်/ပေါင် ကျပ်)",
+        "rate_lime": "ထုံး (၁ ကုဗပေ/ပေါင် ကျပ်)",
+        "rate_pudlo": "Pudlo ရေလုံဆေး (၁ Cft/ကျပ်)",
+        "rate_surkhi": "Surkhi အုတ်နီမှုန့် (၁ Cft/ကျပ်)",
+        "rate_clay": "ရွှံ့စေ့မြေ (၁ Cft/ကျပ်)",
         "calc_subheader": "🧮 အလွယ်တွက်စက်",
         "calc_input": "တွက်လိုသည်များကို ရိုက်ထည့်ပါ (ဥပမာ- 10*12.5 + 5):",
         "calc_ans": "အဖြေ",
@@ -145,10 +202,10 @@ TRANSLATIONS = {
         "conv_sft_label": "Sft / စတုရန်းပေ:",
         "conv_cft_label": "Cft / ကုဗပေ:",
         "conv_sud_label": "Cft / ကုဗပေ ပမာဏ:",
-        "sec1_title": "၁။ တွက်ချက်လိုသော Earthwork Item များ ရွေးပါ",
-        "select_items": "🚜 မြေကျင်းလုပ်ငန်းမှ တွက်လိုသည့် Item များကို ရွေးပါ:",
-        "no_excel_err": "⚠️ '1 Earth Work.xls' ဖိုင်ကို ရှာမတွေ့ပါ သို့မဟုတ် ဖိုင်ထဲတွင် ဒေတာ မရှိပါ။",
-        "item_select_hint": "💡 **အကြံပြုချက်**: တွက်ချက်လိုသော Earthwork Item များကို အထက်ပါ Multiselect Box တွင် ရွေးပေးပါ။",
+        "sec1_title": "၁။ တွက်ချက်လိုသော Item များ ရွေးပါ",
+        "select_items": "🚜/🧱 တွက်လိုသည့် Item များကို ရွေးပါ:",
+        "no_excel_err": "⚠️ ဖိုင်များကို ရှာမတွေ့ပါ သို့မဟုတ် ဖိုင်ထဲတွင် ဒေတာ မရှိပါ။",
+        "item_select_hint": "💡 **အကြံပြုချက်**: တွက်ချက်လိုသော Item များကို အထက်ပါ Multiselect Box တွင် ရွေးပေးပါ သို့မဟုတ် Checkbox ရွေးပါ structural checkbox များကို ဖွင့်ပေးပါ။",
         "sec2_title": "📐 ၂။ အတိုင်းအတာများ ရိုက်ထည့်ပါ (Detail Measurement)",
         "work_location": "လုပ်ငန်းနေရာ / အမျိုးအစား",
         "location_grid": "နေရာ / အကွက်အမည်",
@@ -165,8 +222,8 @@ TRANSLATIONS = {
         "btn_add_row": "➕ အကွက်အသစ်ထည့်ရန်",
         "btn_rem_row": "➖ အကွက်ပြန်ဖြုတ်ရန်",
         "total_summary": "📊 တိုင်းတာချက် စာရင်းချုပ်",
-        "dl_meas_excel": "📥 Detail Earthwork Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
-        "sec3_title": "📊 ၃။ Earthwork ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)",
+        "dl_meas_excel": "📥 Detail Measurement Sheet ကို Excel ဖြင့် ဒေါင်းလုဒ်ရယူရန်",
+        "sec3_title": "📊 ၃။ ကုန်ကျစရိတ် တွက်ချက်မှု (Rate Analysis)",
         "particular": "အကြောင်းအရာ",
         "unit": "ယူနစ်",
         "quantity": "ပမာဏ",
@@ -175,7 +232,7 @@ TRANSLATIONS = {
         "mat_cost_title": "  📦 ပစ္စည်းစရိတ် (Material)",
         "lab_cost_title": "  👷 လုပ်အားခ (Labour)",
         "total_item_cost": "  💰 စုစုပေါင်း ကုန်ကျစရိတ်",
-        "sec4_title": "📜 ၄။ Earthwork BOQ စာရင်းချုပ်",
+        "sec4_title": "📜 ၄။ BOQ စာရင်းချုပ်",
         "mat_boq_title": "📦 ၁။ ပစ္စည်းကုန်ကျစရိတ် စာရင်း (Material Summary)",
         "lab_boq_title": "👷 ၂။ လုပ်အားခ စာရင်း (Labour Summary)",
         "sr_no": "စဉ်",
@@ -184,25 +241,28 @@ TRANSLATIONS = {
         "total_mmk": "စုစုပေါင်း (ကျပ်)",
         "no_mat_cost": "ပစ္စည်းစရိတ် မရှိပါ။",
         "no_lab_cost": "လုပ်အားခ စရိတ် မရှိပါ။",
-        "dl_boq_excel": "📥 Earthwork BOQ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
+        "dl_boq_excel": "📥 BOQ စာရင်းချုပ်ကို Excel ဖြင့် ရယူရန်",
         "total_mat_val": "📦 စုစုပေါင်း ပစ္စည်းဖိုး",
         "total_lab_val": "👷 စုစုပေါင်း လုပ်အားခ",
-        "grand_total_val": "💰 မြေကျင်းလုပ်ငန်း စုစုပေါင်းစရိတ်",
+        "grand_total_val": "💰 စုစုပေါင်း ကုန်ကျစရိတ်",
         "type_add": "➕ အပေါင်း",
         "type_ded": "➖ အနှုတ်",
         "item_no_col": "Item No"
     },
     "EN": {
-        "title": "🚜 Earthwork QS & Calculation Tool",
-        "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork excavation and backfilling.",
+        "title": "🚜 Construction Earthwork & Mortar QS Tool",
+        "subtitle": "Calculate quantities, material/labour costs, and BOQ summaries for earthwork and mortar works.",
+        "select_work_type": "⚙️ Select Work Categories to Calculate:",
+        "chk_earthwork": "Earthwork",
+        "chk_mortar": "Mortar",
         "rates_title": "⚙️ Set Material & Labour Rates",
         "utility_tools_title": "🧮 Quick Utility Tools",
         "tab_calc": "🧮 Calculator",
         "tab_conv": "🔄 Unit Converter",
-        "rates_subheader": "Set Earthwork Unit Rates (MMK)",
+        "rates_subheader": "Set Unit Rates (MMK)",
         "labour_rates": "**👷 Labour Rates**",
         "material_rates": "**📦 Material & Other Costs**",
-        "rate_worker": "Worker (MMK)",
+        "rate_worker": "Worker / Mixer (MMK)",
         "rate_digger": "Digger (MMK)",
         "rate_maistry": "Maistry / Supervisor (MMK)",
         "rate_surveyor": "Surveyor (MMK)",
@@ -210,8 +270,13 @@ TRANSLATIONS = {
         "rate_timber": "Timber (per Ton MMK)",
         "rate_nails": "Wire Nails (per Viss MMK)",
         "rate_water": "Water Charges (L-s MMK)",
-        "rate_sand": "Sand Filling (per Sud MMK)",
-        "rate_carriage": "Earth/Sand Carriage (per Sud MMK)",
+        "rate_sand": "Sand (per Cft/Sud MMK)",
+        "rate_carriage": "Carriage (per Sud MMK)",
+        "rate_cement": "Cement (per Bag/lbs MMK)",
+        "rate_lime": "Lime (per Cft/lbs MMK)",
+        "rate_pudlo": "Pudlo Water Proofing (per Cft MMK)",
+        "rate_surkhi": "Surkhi Powder (per Cft MMK)",
+        "rate_clay": "Clay / Mud (per Cft MMK)",
         "calc_subheader": "🧮 Quick Calculator",
         "calc_input": "Enter expression (e.g. 10*12.5 + 5):",
         "calc_ans": "Result",
@@ -227,10 +292,10 @@ TRANSLATIONS = {
         "conv_sft_label": "Sft:",
         "conv_cft_label": "Cft:",
         "conv_sud_label": "Cft Quantity:",
-        "sec1_title": "1. Select Earthwork Items",
-        "select_items": "🚜 Choose items to calculate from Earthwork catalog:",
-        "no_excel_err": "⚠️ '1 Earth Work.xls' file not found or contains no data.",
-        "item_select_hint": "💡 **Tip**: Select items from the multiselect box above to begin.",
+        "sec1_title": "1. Select Items",
+        "select_items": "Choose items to calculate:",
+        "no_excel_err": "⚠️ Excel files not found or contain no data.",
+        "item_select_hint": "💡 **Tip**: Select items from the multiselect box above or enable checkboxes.",
         "sec2_title": "📐 2. Detail Measurement Input",
         "work_location": "Work Location / Type",
         "location_grid": "Location / Grid Name",
@@ -257,7 +322,7 @@ TRANSLATIONS = {
         "mat_cost_title": "  📦 Material Cost",
         "lab_cost_title": "  👷 Labour Cost",
         "total_item_cost": "  💰 Total Item Cost",
-        "sec4_title": "📜 4. Earthwork BOQ Summary",
+        "sec4_title": "📜 4. BOQ Summary",
         "mat_boq_title": "📦 1. Material Cost Summary",
         "lab_boq_title": "👷 2. Labour Cost Summary",
         "sr_no": "No.",
@@ -266,10 +331,10 @@ TRANSLATIONS = {
         "total_mmk": "Total (MMK)",
         "no_mat_cost": "No material costs.",
         "no_lab_cost": "No labour costs.",
-        "dl_boq_excel": "📥 Download Earthwork BOQ Summary (Excel)",
+        "dl_boq_excel": "📥 Download BOQ Summary (Excel)",
         "total_mat_val": "📦 Total Material Cost",
         "total_lab_val": "👷 Total Labour Cost",
-        "grand_total_val": "💰 Total Earthwork Cost",
+        "grand_total_val": "💰 Total Overall Cost",
         "type_add": "➕ Addition",
         "type_ded": "➖ Deduction",
         "item_no_col": "Item No"
@@ -289,7 +354,7 @@ def translate_particular(part_str, lang):
     return PARTICULAR_TRANSLATIONS.get(lang, {}).get(p_clean, p_clean)
 
 @st.cache_data
-def parse_excel_rates(file_path):
+def parse_excel_rates(file_path, is_mortar=False):
     if not os.path.exists(file_path):
         return []
     try:
@@ -307,7 +372,7 @@ def parse_excel_rates(file_path):
         unit = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ''
         qty = row.iloc[3] if pd.notna(row.iloc[3]) else '0'
 
-        if item_no in ['10', '10.0', '11', '11.0', '22', '22.0']:
+        if not is_mortar and item_no in ['10', '10.0', '11', '11.0', '22', '22.0']:
             continue
 
         if 'nat' in item_no.lower() or '202' in item_no or item_no in ['', 'nan', 'No.', 'NaN']:
@@ -327,11 +392,20 @@ def parse_excel_rates(file_path):
         if particular not in ['', 'nan', 'NaN', 'Particular']:
             if current_item:
                 items.append(current_item)
+            
+            clean_no = item_no.replace('.0', '').strip()
+            if is_mortar:
+                item_key_no = f"M{clean_no}"
+            else:
+                item_key_no = clean_no
+
             current_item = {
-                'item_no': item_no,
+                'item_no': item_key_no,
+                'raw_no': clean_no,
                 'title': particular,
                 'unit': unit,
                 'std_qty': qty,
+                'is_mortar': is_mortar,
                 'breakdown': []
             }
 
@@ -344,9 +418,9 @@ def parse_excel_rates(file_path):
 def export_measurement_sheet_excel(selected_items_list, st_session_state, lang):
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Earthwork Measurement"
+    ws.title = "Detail Measurement"
 
-    ws['A1'] = "EARTHWORK DETAIL MEASUREMENT SHEET"
+    ws['A1'] = "DETAIL MEASUREMENT SHEET"
     ws['A1'].font = Font(name='Calibri', size=14, bold=True, color='1F497D')
     
     header_fill = PatternFill(start_color="1E3A8A", fill_type="solid")
@@ -442,7 +516,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
     
     ws_mat = wb.active
     ws_mat.title = "Material Summary"
-    ws_mat['A1'] = "EARTHWORK MATERIAL COST BREAKDOWN"
+    ws_mat['A1'] = "MATERIAL COST BREAKDOWN"
     ws_mat['A1'].font = Font(size=14, bold=True, color='1F497D')
 
     headers = ["No.", "Particular Description", "Unit", "Quantity", "Rate (MMK)", "Amount (MMK)"]
@@ -471,7 +545,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
     ws_mat.cell(row=r_idx, column=6).number_format = '#,##0.00'
 
     ws_lab = wb.create_sheet(title="Labour Summary")
-    ws_lab['A1'] = "EARTHWORK LABOUR COST BREAKDOWN"
+    ws_lab['A1'] = "LABOUR COST BREAKDOWN"
     ws_lab['A1'].font = Font(size=14, bold=True, color='1F497D')
 
     for col_idx, h in enumerate(headers, 1):
@@ -509,7 +583,7 @@ def export_boq_summary_excel(material_summary, labour_summary):
 
 def main():
     st.set_page_config(
-        page_title="Earthwork QS & Estimator", layout="wide", page_icon="🚜"
+        page_title="Earthwork & Mortar Estimator", layout="wide", page_icon="🚜"
     )
 
     col_title_space, col_lang = st.columns([4, 1])
@@ -575,28 +649,55 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
+    # ----------------------------------------------------
+    # Checkbox Options (Earthwork / Mortar / Both)
+    # ----------------------------------------------------
+    st.markdown(f"**{t['select_work_type']}**")
+    col_chk1, col_chk2, _ = st.columns([2, 2, 4])
+    with col_chk1:
+        calc_earthwork = st.checkbox(t['chk_earthwork'], value=True)
+    with col_chk2:
+        calc_mortar = st.checkbox(t['chk_mortar'], value=False)
+
     earthwork_path = os.path.join(BASE_DIR, "1 Earth Work.xls")
-    earthwork_items = parse_excel_rates(earthwork_path)
+    mortar_path = os.path.join(BASE_DIR, "2 Mortar.xls")
 
-    prefix = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
-    ew_options = {}
-    for item in earthwork_items:
-        item_no_clean = str(item['item_no']).replace('.0', '').strip()
-        if lang == "MM" and item_no_clean in MM_ITEM_TITLES:
-            display_title = MM_ITEM_TITLES[item_no_clean]
-        else:
-            display_title = item['title']
-        
-        display_unit = translate_unit(item['unit'], lang)
+    earthwork_items = parse_excel_rates(earthwork_path, is_mortar=False) if calc_earthwork else []
+    mortar_items = parse_excel_rates(mortar_path, is_mortar=True) if calc_mortar else []
 
-        item_copy = dict(item)
-        item_copy['display_title'] = display_title
-        item_copy['display_unit'] = display_unit
-        key_str = f"{prefix} Item {item['item_no']} - {display_title}"
-        ew_options[key_str] = item_copy
+    all_available_options = {}
 
-    if 'selected_ew' not in st.session_state:
-        st.session_state['selected_ew'] = []
+    if calc_earthwork:
+        prefix_ew = "[မြေကျင်း]" if lang == "MM" else "[Earthwork]"
+        for item in earthwork_items:
+            item_no_clean = item['raw_no']
+            if lang == "MM" and item_no_clean in MM_ITEM_TITLES:
+                display_title = MM_ITEM_TITLES[item_no_clean]
+            else:
+                display_title = item['title']
+            
+            display_unit = translate_unit(item['unit'], lang)
+            item_copy = dict(item)
+            item_copy['display_title'] = display_title
+            item_copy['display_unit'] = display_unit
+            key_str = f"{prefix_ew} Item {item['item_no']} - {display_title}"
+            all_available_options[key_str] = item_copy
+
+    if calc_mortar:
+        prefix_mo = "[Mortar]" if lang == "MM" else "[Mortar]"
+        for item in mortar_items:
+            item_no_clean = item['item_no']
+            if lang == "MM" and item_no_clean in MM_ITEM_TITLES:
+                display_title = MM_ITEM_TITLES[item_no_clean]
+            else:
+                display_title = item['title']
+            
+            display_unit = translate_unit(item['unit'], lang)
+            item_copy = dict(item)
+            item_copy['display_title'] = display_title
+            item_copy['display_unit'] = display_unit
+            key_str = f"{prefix_mo} Item {item['item_no']} - {display_title}"
+            all_available_options[key_str] = item_copy
 
     # ----------------------------------------------------
     # ၁။ ပစ္စည်းနှင့် လုပ်အားခ ပေါက်ဈေး သတ်မှတ်ရန် Block
@@ -608,18 +709,30 @@ def main():
         with col_r1:
             st.markdown(t['labour_rates'])
             rate_worker = st.number_input(t['rate_worker'], value=25000.0, step=1000.0)
-            rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
-            rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
-            rate_surveyor = st.number_input(t['rate_surveyor'], value=40000.0, step=1000.0)
-            rate_carpenter = st.number_input(t['rate_carpenter'], value=35000.0, step=1000.0)
+            
+            if calc_earthwork:
+                rate_digger = st.number_input(t['rate_digger'], value=25000.0, step=1000.0)
+                rate_maistry = st.number_input(t['rate_maistry'], value=30000.0, step=1000.0)
+                rate_surveyor = st.number_input(t['rate_surveyor'], value=40000.0, step=1000.0)
+                rate_carpenter = st.number_input(t['rate_carpenter'], value=35000.0, step=1000.0)
 
         with col_r2:
             st.markdown(t['material_rates'])
-            rate_timber = st.number_input(t['rate_timber'], value=1800000.0, step=50000.0)
-            rate_nails = st.number_input(t['rate_nails'], value=12000.0, step=500.0)
-            rate_water = st.number_input(t['rate_water'], value=20000.0, step=1000.0)
-            rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
-            rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
+            if calc_earthwork:
+                rate_timber = st.number_input(t['rate_timber'], value=1800000.0, step=50000.0)
+                rate_nails = st.number_input(t['rate_nails'], value=12000.0, step=500.0)
+                rate_water = st.number_input(t['rate_water'], value=20000.0, step=1000.0)
+                rate_sand = st.number_input(t['rate_sand'], value=45000.0, step=1000.0)
+                rate_carriage = st.number_input(t['rate_carriage'], value=15000.0, step=1000.0)
+
+            if calc_mortar:
+                if not calc_earthwork:
+                    rate_sand = st.number_input(t['rate_sand'], value=450.0, step=10.0) # per Cft
+                rate_cement = st.number_input(t['rate_cement'], value=350.0, step=10.0) # per lbs or unit
+                rate_lime = st.number_input(t['rate_lime'], value=500.0, step=10.0)
+                rate_pudlo = st.number_input(t['rate_pudlo'], value=1000.0, step=50.0)
+                rate_surkhi = st.number_input(t['rate_surkhi'], value=800.0, step=50.0)
+                rate_clay = st.number_input(t['rate_clay'], value=300.0, step=10.0)
 
     # ----------------------------------------------------
     # ၂။ "ဂဏန်းတွက်စက်" နှင့် "ယူနစ်ပြောင်းရန်" သီးသန့် Expander Block
@@ -680,12 +793,20 @@ def main():
     rate_water = locals().get('rate_water', 20000.0)
     rate_sand = locals().get('rate_sand', 45000.0)
     rate_carriage = locals().get('rate_carriage', 15000.0)
+    rate_cement = locals().get('rate_cement', 350.0)
+    rate_lime = locals().get('rate_lime', 500.0)
+    rate_pudlo = locals().get('rate_pudlo', 1000.0)
+    rate_surkhi = locals().get('rate_surkhi', 800.0)
+    rate_clay = locals().get('rate_clay', 300.0)
 
     rate_map = {
         "Worker": rate_worker,
         "Worker for carrying and ramming": rate_worker,
         "Worker for watering": rate_worker,
         "Worker for carrying": rate_worker,
+        "Workers for mixing": rate_worker,
+        "Worker for mixing including watering": rate_worker,
+        "Workers": rate_worker,
         "Digger": rate_digger,
         "Maistry": rate_maistry,
         "Surveyor": rate_surveyor,
@@ -695,17 +816,30 @@ def main():
         "Water Charges": rate_water,
         "Sand": rate_sand,
         "Carriage to site": rate_carriage,
+        "Lime": rate_lime,
+        "Lime ( Slaked )": rate_lime,
+        "Pudlo": rate_pudlo,
+        "Surkhi": rate_surkhi,
+        "Selection suitable clay ( mud )": rate_clay,
     }
+
+    # Dynamic rates matching for cement variations
+    def get_rate_for_particular(part_name):
+        if part_name in rate_map:
+            return rate_map[part_name]
+        if "cement" in part_name.lower():
+            return rate_cement
+        return 0.0
 
     # Step 1: Selection
     st.markdown(f'<div class="section-title">{t["sec1_title"]}</div>', unsafe_allow_html=True)
     
-    if not earthwork_items:
+    if not all_available_options:
         st.warning(t['no_excel_err'])
         return
 
-    ew_selected = st.multiselect(t['select_items'], list(ew_options.keys()), key="selected_ew")
-    selected_items_list = [ew_options[k] for k in ew_selected if k in ew_options]
+    selected_keys = st.multiselect(t['select_items'], list(all_available_options.keys()), key="selected_items_key")
+    selected_items_list = [all_available_options[k] for k in selected_keys if k in all_available_options]
 
     if not selected_items_list:
         st.info(t['item_select_hint'])
@@ -884,7 +1018,7 @@ def main():
     st.download_button(
         label=t['dl_meas_excel'],
         data=meas_excel_buffer,
-        file_name="Earthwork_Measurement_Sheet.xlsx",
+        file_name="Measurement_Sheet.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
@@ -956,41 +1090,43 @@ def main():
             rows_state_key = f"rows_data_{item_no}_{idx}"
             current_rows = st.session_state.get(rows_state_key, [])
 
-            for r in current_rows:
-                if r.get('is_deduction_row'):
-                    continue
-                
-                no_val = float(r.get('no', 1))
-                l_val = float(r.get('l', 0.0))
-                b_val = float(r.get('b', 0.0))
-                h_val = float(r.get('h', 0.0))
-                ded_val = float(r.get('ded', 0.0))
+            if not item.get('is_mortar'):
+                for r in current_rows:
+                    if r.get('is_deduction_row'):
+                        continue
+                    
+                    no_val = float(r.get('no', 1))
+                    l_val = float(r.get('l', 0.0))
+                    b_val = float(r.get('b', 0.0))
+                    h_val = float(r.get('h', 0.0))
+                    ded_val = float(r.get('ded', 0.0))
 
-                row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
+                    row_cft = max(0.0, (no_val * l_val * b_val * h_val) - ded_val)
 
-                if item_no in ['2', '2.0', '3', '3.0', '4', '4.0']:
-                    if h_val > 5.0:
-                        extra_h = h_val - 5.0
-                        depth_steps = math.ceil(extra_h / 5.0)
-                        extra_worker_depth += depth_steps * 0.5 * (row_cft / 100.0)
+                    raw_no = item.get('raw_no', '')
+                    if raw_no in ['2', '3', '4']:
+                        if h_val > 5.0:
+                            extra_h = h_val - 5.0
+                            depth_steps = math.ceil(extra_h / 5.0)
+                            extra_worker_depth += depth_steps * 0.5 * (row_cft / 100.0)
 
-                    max_dist = max(l_val, b_val)
-                    if max_dist > 100.0:
-                        extra_dist = max_dist - 100.0
-                        lead_steps = math.ceil(extra_dist / 100.0)
-                        extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
+                        max_dist = max(l_val, b_val)
+                        if max_dist > 100.0:
+                            extra_dist = max_dist - 100.0
+                            lead_steps = math.ceil(extra_dist / 100.0)
+                            extra_worker_lead += lead_steps * 0.5 * (row_cft / 100.0)
 
-                elif item_no in ['20', '20.0']:
-                    if h_val > 10.0:
-                        extra_h = h_val - 10.0
-                        depth_steps = math.ceil(extra_h / 5.0)
-                        extra_worker_depth += depth_steps * 3.38 * (row_cft / 100.0)
+                    elif raw_no == '20':
+                        if h_val > 10.0:
+                            extra_h = h_val - 10.0
+                            depth_steps = math.ceil(extra_h / 5.0)
+                            extra_worker_depth += depth_steps * 3.38 * (row_cft / 100.0)
 
-                elif item_no in ['21', '21.0']:
-                    if h_val > 10.0:
-                        extra_h = h_val - 10.0
-                        depth_steps = math.ceil(extra_h / 5.0)
-                        extra_worker_depth += depth_steps * 3.0 * (row_cft / 100.0)
+                    elif raw_no == '21':
+                        if h_val > 10.0:
+                            extra_h = h_val - 10.0
+                            depth_steps = math.ceil(extra_h / 5.0)
+                            extra_worker_depth += depth_steps * 3.0 * (row_cft / 100.0)
 
             for row in item['breakdown']:
                 part = row['particular']
@@ -1003,14 +1139,14 @@ def main():
                     req_qty = (std_qty / std_base_qty) * measured_qty
 
                 part_lower = part.lower()
-                if ('worker' in part_lower or 'digger' in part_lower) and item_no in ['2', '2.0', '3', '3.0', '4', '4.0', '20', '20.0', '21', '21.0']:
+                if not item.get('is_mortar') and ('worker' in part_lower or 'digger' in part_lower):
                     req_qty += (extra_worker_depth + extra_worker_lead)
 
                 u_str = str(u).lower().strip()
                 if 'l-s' in u_str or 'ls' in u_str or 'lump' in u_str:
                     req_qty = 1.0
 
-                unit_rate = rate_map.get(part, 0.0)
+                unit_rate = get_rate_for_particular(part)
                 amount = req_qty * unit_rate
                 item_total_cost += amount
 
@@ -1128,7 +1264,7 @@ def main():
     st.download_button(
         label=t['dl_boq_excel'],
         data=boq_excel_buffer,
-        file_name="Earthwork_BOQ_Summary.xlsx",
+        file_name="BOQ_Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         use_container_width=True
     )
